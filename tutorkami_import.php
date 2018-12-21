@@ -129,18 +129,20 @@ class db {
         } elseif(!isset($data['cover_area_state']) || count($data['cover_area_state']) == 0) {
             $res = array('flag' => 'error', 'message' => 'Area you can cover is required.');
         }*/ else {
-            // Check for Duplicate
+            // Check for Duplicate (Add check to displayid)
             $sql = "SELECT * FROM ".DB_PREFIX."_user WHERE 
             u_status <> 'D' AND (
                 u_email = '{$email}' || 
                 u_username = '{$email}' || 
                 u_email = '{$username}' || 
                 u_username = '{$username}'
-            )";
+			)";
+			//	u_displayid = '{$displayid}' 
+            
 
             $qry = $thisDB->query($sql);
             
-			//role to support varchar
+			//role to integer number only
             if ($qry->num_rows == 0) {
                 $sqli = "INSERT INTO ".DB_PREFIX."_user SET 
                     u_email = '".$email."',
@@ -422,18 +424,18 @@ class db {
         $data['ud_last_name']           = $info_obj->LastName;
         $data['ud_phone_number']        = $info_obj->Phone;
         // $data['ud_postal_code']         = $info_obj->Username;
-        // $data['ud_address']             = $info_obj->Username;
+        $data['ud_address']             = $info_obj->Username;  //Add Address
         // $data['ud_address2']            = $info_obj->Username;
         // $data['ud_country']             = $info_obj->Username;
        
         $data['ud_city']                = $info_obj->City;
         $data['ud_dob']                 = $info_obj->DateOfBirth;
-        // $data['ud_company_name']        = $info_obj->Username;
+        $data['ud_company_name']        = $info_obj->Company; //Add company
         $data['ud_race']                = $info_obj->Race;
         $data['ud_marital_status']      = ($info_obj->IsMarried == False) ? 'Not Married' : 'Married';
         //hardcode nationality
          $data['ud_nationality']         = "Malaysian";//$info_obj->Username;
-        // $data['ud_admin_comment']       = $info_obj->Username;
+         $data['ud_admin_comment']       = $info_obj->AdminComment; //add admin comment
          $data['ud_tutor_status']        = ($info_obj->IsFullTime =='True') ? 'Full Time' : 'Part Time';
          //Occupation
          $data['ud_current_occupation']    = $info_obj->Occupation;
@@ -450,6 +452,12 @@ class db {
             exit();
         }
 */		//$$count==0;
+
+
+		//Add role import modification
+//		$data['u_role']    = $info_obj->Occupation;
+
+
         if ($info_obj->id != 1) {
 			
 			$count = $count + 1; //add count number
