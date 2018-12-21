@@ -1,10 +1,12 @@
+
 <?php 
-require_once('config.php.inc');
+require_once('config.php');
 
 
 
 class db {
     var $conn;
+	var $count;
     function __construct() {
         session_start();
     }
@@ -103,7 +105,7 @@ class db {
         $qualification      = isset($data['ud_qualification']) ? $this->RealEscape($data['ud_qualification']) : '';
         $role               = isset($data['u_role']) ? $this->RealEscape($data['u_role']) : '';
         $tution_center      = (isset($data['tution_center']) && $data['tution_center'] == 1)? 'Tuition Centre':'Not Selected';
-        $displayid          = $this->getRandStr(7);
+        $displayid          = $this->getRandStr(7); //isset($data['u_displayid']) ? $this->RealEscape($data['u_displayid']) : ''; //
 
         // Validation
         if ($username == '') {
@@ -138,7 +140,7 @@ class db {
 
             $qry = $thisDB->query($sql);
             
-
+			//role to support varchar
             if ($qry->num_rows == 0) {
                 $sqli = "INSERT INTO ".DB_PREFIX."_user SET 
                     u_email = '".$email."',
@@ -150,9 +152,9 @@ class db {
                     u_status = '".$u_status."',
                     u_password = '".$password."',                 
                     u_create_date = '".date('Y-m-d H:i:s')."',
-                    u_role  = '{$role}',
-                    u_country_id  = '{$country_id}'";
-
+                    u_role  = '{$role}', 
+                    u_country_id  = '{$country_id}'" ;
+				
                 $exe = $thisDB->query($sqli);
                 
                   if ($exe){} else { echo $thisDB->error."<br>"; }
@@ -258,16 +260,18 @@ class db {
 }
 
  function mig() {
+	$count = 0; //add count
     $thisInit = new db();
+	//var_dump($thisInit);
     $thisDB = $thisInit->con_db();
 
-   $result = $thisInit->UltimateCurlSend('http://tutorkamiapi.azurewebsites.net/api/tutorkami/GetMemberID');
+   $result = $thisInit->UltimateCurlSend('http://localhost:4190/api/tutorkami/GetMemberID');
 
     $r_decode = json_decode($result);
     // echo "<pre>";
     foreach ($r_decode->data as $key => $value) {
 
-        $info_res = $thisInit->UltimateCurlSend('http://tutorkamiapi.azurewebsites.net/api/tutorkami/GetMemberInfo?id='.$value->UserId);
+        $info_res = $thisInit->UltimateCurlSend('http://localhost:4190/api/tutorkami/GetMemberInfo?id='.$value->UserId);
         $i_decode = json_decode($info_res);
 
         /*print_r($i_decode->data[0]);
@@ -297,20 +301,20 @@ class db {
                 
                 $state_id ="";
                 if ($ar_num > 0) {
-                    $ar_row = $ar_qry->fetch_array(MYSQLI_ASSOC);
+                    $ar_row = $ar_qry->fetch_array(MYSQLI_BOTH);
                     $state_id = $ar_row['st_id'];
                                                           
                 } else {
                     $thisDB->query("INSERT INTO ".DB_PREFIX."_states SET st_name = '".$st_name."', st_c_id = '150', st_status = '1'");
                     $state_id = $thisDB->insert_id;
                 }
-
-                
-                if (array_search($state_id, $data['cover_area_state']) == false) {
+				//New code to remove warning
+                if (array_search($state_id, array_column ($data, 'cover_area_state'))) {
+               // if (array_search($state_id, $data['cover_area_state']) == false) {
                     $data['cover_area_state'][] = $state_id;
                   
                 }            
-                
+                //var_dump ($state_id);
                 // City Data
               
                 $ars_sql = "SELECT `city_id` FROM `".DB_PREFIX."_cities` WHERE LOWER(`city_name`) = '".strtolower($city_name)."'";
@@ -319,7 +323,7 @@ class db {
                 
 
                 if ($ars_num > 0) {
-                    $ars_row = $ars_qry->fetch_array(MYSQLI_ASSOC);
+                    $ars_row = $ars_qry->fetch_array(MYSQLI_BOTH);
                     $city_id = $ars_row['city_id'];
                 } else {
                   
@@ -327,8 +331,9 @@ class db {
                     $city_id = $thisDB->insert_id;
                    // echo $thisDB->error;
                 }
-              
-                if (array_search($city_id, $data['cover_area_city_'.$state_id]) == false) {    
+				
+				if (array_search($city_id, array_column ($data, 'cover_area_city_'.$state_id))) {
+             // if (array_search($city_id, $data['cover_area_city_'.$state_id]) == false) {    
                     $data['cover_area_city_'.$state_id][] = $city_id;
                 }
             }
@@ -354,7 +359,7 @@ class db {
               
                 
                 if ($arcourse_num > 0) {
-                    $arcourse_row = $arcourse_qry->fetch_array(MYSQLI_ASSOC);
+                    $arcourse_row = $arcourse_qry->fetch_array(MYSQLI_BOTH);
                     $course_id = $arcourse_row['tc_id'];
                 } else {
                     $thisDB->query("INSERT INTO ".DB_PREFIX."_tution_course SET tc_title = '".$course_name."', tc_description = '".$course_name."', tc_country_id = '150', tc_status = 'A'");
@@ -362,8 +367,8 @@ class db {
                   
                 }
                 
-                
-                if (array_search($course_id, $data['tutor_course']) == false) {        
+                if (array_search($course_id, array_column ($data, 'tutor_course'))) {
+             //   if (array_search($course_id, $data['tutor_course']) == false) {        
                     $data['tutor_course'][] = $course_id;
                     }
                    
@@ -374,7 +379,7 @@ class db {
                     
 
                 if ($subject_num > 0) {
-                    $subject_row = $subject_qry->fetch_array(MYSQLI_ASSOC);
+                    $subject_row = $subject_qry->fetch_array(MYSQLI_BOTH);
                     $subject_id = $subject_row['ts_id'];
                 } else {
                     $thisDB->query("INSERT INTO ".DB_PREFIX."_tution_subject SET ts_title = '".$subject_name."', ts_description = '".$subject_name."', ts_tc_id = '".$course_id."', ts_status = 'A', ts_country_id = 150");
@@ -382,8 +387,8 @@ class db {
                    echo $thisDB->error;
                 }
                 
-               
-                if (array_search($subject_id, $data['tutor_subject_'.$course_id]) == false) {    
+				if (array_search($subject_id, array_column ($data, 'tutor_subject_'.$course_id))) {
+             //   if (array_search($subject_id, $data['tutor_subject_'.$course_id]) == false) {    
                     $data['tutor_subject_'.$course_id][] = $subject_id;
                     
                 }
@@ -392,16 +397,24 @@ class db {
             }
         }
 
-        // Collect data
+        // Collect data for only tutor with activated status 
+		if ($info_obj->Type == 'tutor' && $info_obj->TutorRegistrationStatus == 'Activated'){
+			$data['ud_client_status']      = ($info_obj->Type == 'tutor') ? 'Not Selected' : 'Parent' ;
+		} //end if tutor status
+		
+		// Collect data for only client 
+		if ( $info_obj->Type == 'client'){	
+			$data['ud_client_status']       = ($info_obj->Type == 'client') ? 'Parent' : 'Not Selected' ;		
+		}
         $data['u_username']             = $info_obj->Username;
         $data['u_email']                = $info_obj->Email;
         $data['u_gender']               = $info_obj->Gender;
         $data['u_password']             = $info_obj->Password;
-        $data['u_displayid']            = $info_obj->Username;
+     // $data['u_displayid']            = $info_obj->id;
         $data['u_displayname']          = $info_obj->DisplayName;
         $data['u_profile_pic']          = $info_obj->AvatarPictureId;
-        $data['u_role']                 = ($info_obj->Type == 'tutor') ? 3 : 4;
-        $data['u_status']               = ($info_obj->TutorRegistrationStatus == 'Activated') ? A : P; //A =  activated, P = parent
+        $data['u_role']                 = $info_obj->Type == 'tutor' ? '3' : '4';
+        $data['u_status']               = $info_obj->TutorRegistrationStatus == 'Activated' ? 'A' : 'P';
         $data['u_password_salt']        = $info_obj->PasswordSalt;
         
         
@@ -429,27 +442,35 @@ class db {
          $data['ud_about_yourself']      = $info_obj->SelfDescription;
         // $data['ud_rate_per_hour']       = $info_obj->Username;
          $data['ud_qualification']       = $info_obj->Qualifications;
-         $data['ud_client_status']       = ($info_obj->ConsiderTuitionCentre == True) ? 'Tuition Centre' : 'Not Selected' ;
+        
         // $data['ud_client_status_2']     = $info_obj->Username;
         $data['u_country_id']           = 150;
 
         /*if ($i_decode->data[0]->id == 229) {
             exit();
         }
-*/
+*/		//$$count==0;
         if ($info_obj->id != 1) {
-             echo $data['u_username']."\n"; 
+			
+			$count = $count + 1; //add count number
+			 echo $count.")\n";
+		echo $data['u_username']." | \n";
+			 echo $data['u_role']." | \n"; 
+			 echo $data['ud_client_status']." | \n"; 
              $executionTime = microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"];
-             echo $executionTime."\n";
+             echo $executionTime." | \n";
+			 echo "<br />\n";
         }
         try {
         $thisInit->ImportData($data);
 	        } catch (Exception $e) {
 	 	   			echo 'Caught exception: ',  $e->getMessage(), "\n";
 				  }
-    }
+    
+	
 
-   
+
+			}
 }
  mig();
 ?>
