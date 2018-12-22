@@ -107,6 +107,14 @@ class db {
         $tution_center      = (isset($data['tution_center']) && $data['tution_center'] == 1)? 'Tuition Centre':'Not Selected';
         $displayid          = $this->getRandStr(7); //isset($data['u_displayid']) ? $this->RealEscape($data['u_displayid']) : ''; //
 
+		//Add missing Option
+		$LastIpAddress      = isset($data['u_LastIpAddress']) ? $this->RealEscape($data['u_LastIpAddress']) : '';
+		$LastVisitedPage	= isset($data['u_LastVisitedPage']) ? $this->RealEscape($data['u_LastVisitedPage']) : '';
+		$CreatedOnUtc		= isset($data['u_CreatedOnUtc']) ? $this->RealEscape($data['u_CreatedOnUtc']) : '';
+		$PayingClient		= isset($data['u_paying_client']) ? $this->RealEscape($data['u_paying_client']) : 'P';
+		$u_id				= isset($data['u_id']) ? $this->RealEscape($data['u_id']) : '';
+		$ud_client_status	= isset($data['ud_client_status']) ? $this->RealEscape($data['ud_client_status']) : '';
+		
         // Validation
         if ($username == '') {
             $res = array('flag' => 'error', 'message' => 'Username is required.');
@@ -129,22 +137,22 @@ class db {
         } elseif(!isset($data['cover_area_state']) || count($data['cover_area_state']) == 0) {
             $res = array('flag' => 'error', 'message' => 'Area you can cover is required.');
         }*/ else {
-            // Check for Duplicate (Add check to displayid)
+            // Check for Duplicate 
             $sql = "SELECT * FROM ".DB_PREFIX."_user WHERE 
             u_status <> 'D' AND (
                 u_email = '{$email}' || 
                 u_username = '{$email}' || 
                 u_email = '{$username}' || 
                 u_username = '{$username}'
-			)";
-			//	u_displayid = '{$displayid}' 
+			)"; 
             
 
             $qry = $thisDB->query($sql);
             
-			//role to integer number only
+			//role to integer number only, use old DB user ID to make ease of other OLD DB table transfer
             if ($qry->num_rows == 0) {
-                $sqli = "INSERT INTO ".DB_PREFIX."_user SET 
+                $sqli = "INSERT INTO ".DB_PREFIX."_user SET
+					u_id = '{$u_id}',
                     u_email = '".$email."',
                     u_username = '".$username."',
                     u_displayname = '".$displayname."',
@@ -153,9 +161,14 @@ class db {
                     u_profile_pic = '".$profile_pic."',
                     u_status = '".$u_status."',
                     u_password = '".$password."',                 
-                    u_create_date = '".date('Y-m-d H:i:s')."',
+                    u_create_date = '".date('Y-m-d H:i:s',strtotime($CreatedOnUtc))."',
                     u_role  = '{$role}', 
-                    u_country_id  = '{$country_id}'" ;
+                    u_country_id  = '{$country_id}',
+					ip_address = '".$LastIpAddress."',
+					last_page = '".$LastVisitedPage."',
+					u_paying_client = '{$PayingClient}'
+				";
+					
 				
                 $exe = $thisDB->query($sqli);
                 
@@ -182,7 +195,7 @@ class db {
                         ud_marital_status  = '{$marital_status}',
                         ud_nationality  = '{$nationality}',
                         ud_admin_comment = '{$admin_comment}',
-                        ud_client_status = '{$tution_center}',
+                        ud_client_status = '{$ud_client_status}',
                         ud_tutor_experience = '{$tutor_experience}',
                         ud_current_occupation = '{$occupation}',
                         ud_current_occupation_other = '{$occupationother}',
@@ -261,6 +274,8 @@ class db {
     }
 }
 
+//Title Column
+echo "No | Username | Role | Status | Exec Time  | <br />";
  function mig() {
 	$count = 0; //add count
     $thisInit = new db();
@@ -282,7 +297,7 @@ class db {
         $info_obj = $i_decode->data[0];
         $data = array();
        
-        // Area covred
+        // Area covered
         $area_covered = $info_obj->AreasCovered;
         $area_arr = explode(';', $area_covered);
         
@@ -393,9 +408,7 @@ class db {
              //   if (array_search($subject_id, $data['tutor_subject_'.$course_id]) == false) {    
                     $data['tutor_subject_'.$course_id][] = $subject_id;
                     
-                }
-                
-                
+                }             
             }
         }
 
@@ -408,11 +421,11 @@ class db {
 		if ( $info_obj->Type == 'client'){	
 			$data['ud_client_status']       = ($info_obj->Type == 'client') ? 'Parent' : 'Not Selected' ;		
 		}
+		$data['u_id']            		= $info_obj->id; //Use old DB ID to link Job later
         $data['u_username']             = $info_obj->Username;
         $data['u_email']                = $info_obj->Email;
         $data['u_gender']               = $info_obj->Gender;
-        $data['u_password']             = $info_obj->Password;
-     // $data['u_displayid']            = $info_obj->id;
+        $data['u_password']             = $info_obj->Password; 
         $data['u_displayname']          = $info_obj->DisplayName;
         $data['u_profile_pic']          = $info_obj->AvatarPictureId;
         $data['u_role']                 = $info_obj->Type == 'tutor' ? '3' : '4';
@@ -424,7 +437,7 @@ class db {
         $data['ud_last_name']           = $info_obj->LastName;
         $data['ud_phone_number']        = $info_obj->Phone;
         // $data['ud_postal_code']         = $info_obj->Username;
-        $data['ud_address']             = $info_obj->Username;  //Add Address
+        $data['ud_address']             = $info_obj->StreetAddress;  //Add Address
         // $data['ud_address2']            = $info_obj->Username;
         // $data['ud_country']             = $info_obj->Username;
        
@@ -447,7 +460,12 @@ class db {
         
         // $data['ud_client_status_2']     = $info_obj->Username;
         $data['u_country_id']           = 150;
-
+		//$data['u_state']           		= $info_obj->State;
+		$data['u_LastIpAddress']       = $info_obj->LastIpAddress;	
+		$data['u_LastVisitedPage']     = $info_obj->LastVisitedPage;
+		$data['u_CreatedOnUtc']        = $info_obj->CreatedOnUtc;
+		
+		
         /*if ($i_decode->data[0]->id == 229) {
             exit();
         }
@@ -457,12 +475,12 @@ class db {
 		//Add role import modification
 //		$data['u_role']    = $info_obj->Occupation;
 
-
         if ($info_obj->id != 1) {
 			
 			$count = $count + 1; //add count number
+			
 			 echo $count.")\n";
-		echo $data['u_username']." | \n";
+			 echo $data['u_username']." | \n";
 			 echo $data['u_role']." | \n"; 
 			 echo $data['ud_client_status']." | \n"; 
              $executionTime = microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"];
