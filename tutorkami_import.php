@@ -115,7 +115,55 @@ class db {
 		$u_id				= isset($data['u_id']) ? $this->RealEscape($data['u_id']) : '';
 		$ud_client_status	= isset($data['ud_client_status']) ? $this->RealEscape($data['ud_client_status']) : '';
 		
-        // Validation
+		//Add Job Import Data
+		$j_id				= isset($data['j_id']) ? $this->RealEscape($data['j_id']) : '';
+		$j_area				= isset($data['j_area']) ? $this->RealEscape($data['j_area']) : '';
+		$j_email			= isset($data['j_email']) ? $this->RealEscape($data['j_email']) : '';
+		$j_rate				= isset($data['j_rate']) ? $this->RealEscape($data['j_rate']) : '';
+		$j_preferred_date_time	= isset($data['j_preferred_date_time']) ? $this->RealEscape($data['j_preferred_date_time']) : '';
+		$j_commission		= isset($data['j_commission']) ? $this->RealEscape($data['j_commission']) : '';
+		$j_duration			= isset($data['j_duration']) ? $this->RealEscape($data['j_duration']) : '';
+		$j_status			= (isset($data['j_status']) && $data['j_status'] == 0)? 'Closed':'Open'; //0:Close, 1:Open.
+		$j_payment_status	= (isset($data['j_payment_status']) && $data['j_payment_status'] == False)? 'Pending':'Paid'; //0:pending, 1:paid?
+		$j_deadline			= isset($data['j_deadline']) ? $this->RealEscape($data['j_deadline']) : '';
+		$j_start_date		= isset($data['j_start_date']) ? $this->RealEscape($data['j_start_date']) : '';
+		$j_end_date			= isset($data['j_end_date']) ? $this->RealEscape($data['j_end_date']) : '';
+		$j_create_date		= isset($data['j_create_date']) ? $this->RealEscape($data['j_create_date']) : '';
+		$j_telephone		= isset($data['j_telephone']) ? $this->RealEscape($data['j_telephone']) : '';
+		$j_country_id 		= '150';
+		
+		
+		$j_sql = "SELECT * FROM ".DB_PREFIX."_job WHERE 
+            (
+                j_id = '{$j_id}' 
+			)"; 
+  
+            $j_qry = $thisDB->query($j_sql);
+            
+			//role to integer number only, use old DB user ID to make ease of other OLD DB table transfer
+            if ($j_qry->num_rows == 0) {
+                $j_sqli = "INSERT INTO ".DB_PREFIX."_job SET
+					j_id = '{$j_id}',
+                    j_email = '".$j_email."',
+                    j_area = '".$j_area."',
+                    j_rate = '".$j_rate."',
+                    j_preferred_date_time = '".$j_preferred_date_time."',
+                    j_commission = '".$j_commission."',
+                    j_duration = '".$j_duration."',
+                    j_status = '".$j_status."',
+                    j_payment_status = '".$j_payment_status."',                 
+                    j_deadline = '".date('Y-m-d',strtotime($j_deadline))."',
+                    j_start_date  = '".date('Y-m-d',strtotime($j_start_date))."',
+                    j_end_date  = '".date('Y-m-d',strtotime($j_end_date))."',
+					j_create_date = '".date('Y-m-d H:i:s',strtotime($j_create_date))."',
+					j_telephone = '".$j_telephone."',
+					j_country_id = '{$j_country_id}'
+				";
+				$j_exe = $thisDB->query($j_sqli);
+			}
+			
+		
+        // Validation for user information
         if ($username == '') {
             $res = array('flag' => 'error', 'message' => 'Username is required.');
         }elseif($password == '') {
@@ -199,8 +247,6 @@ class db {
                         ud_tutor_experience = '{$tutor_experience}',
                         ud_current_occupation = '{$occupation}',
                         ud_current_occupation_other = '{$occupationother}',
-
-
                         ud_about_yourself = '{$about_yourself}',
                         ud_qualification = '{$qualification}',
                         ud_tutor_status = '{$tutor_status}'";
@@ -278,13 +324,17 @@ class db {
 echo "No | Username | Role | Status | Exec Time  | <br />";
  function mig() {
 	$count = 0; //add count
+	$count1 = 0;
     $thisInit = new db();
 	//var_dump($thisInit);
     $thisDB = $thisInit->con_db();
 
    $result = $thisInit->UltimateCurlSend('http://localhost:4190/api/tutorkami/GetMemberID');
+   
 
-    $r_decode = json_decode($result);
+    $r_decode = json_decode($result);		//Member ID decode using json listing
+	
+	//var_dump($jobmapping);
     // echo "<pre>";
     foreach ($r_decode->data as $key => $value) {
 
@@ -411,7 +461,42 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
                 }             
             }
         }
-
+		$count1 = $count1+1;
+		// Add Job Migration
+		$jobmapping = $thisInit->UltimateCurlSend('http://localhost:4190/api/tutorkami/GetJobInfo?id='.$count1); //Get Job list
+		$j_decode = json_decode($jobmapping);	//Job Mapping Decode using json listing
+		$job_list = $j_decode->data[0];	//Store decoded Job list to array table
+        $data = array();
+		
+		//$TutorHiredId = $job_list->TutorHiredId;
+		/*foreach (){
+			
+		}*/
+		//Collect Job Info from OLD DB
+		$data['j_id']            			= $job_list->id; //Use old DB ID to link Job
+		$data['j_level']            		= $job_list->Level; //Level refer to tk_level table
+		$data['j_area']            		= $job_list->Area;	//Same as old system
+		$data['j_email']    				= $job_list->ContactPersonId; //new system using customer's email not ID
+		$data['j_rate']            		= $job_list->Rate; //Rate per hour
+		$data['j_preferred_date_time']    = $job_list->PreferredTimes; //Same as old system
+		$data['j_commission']          	= $job_list->Commission; //Same as old system
+		$data['j_duration']				= $job_list->DurationOfEngagement; //Same as old system
+		$data['j_status']           		= $job_list->StatusId; //new system using Open:0, Close:1 or nego:2
+		$data['j_payment_status']         = $job_list->PaymentStatusId; //New system pending:0, paid:1
+		$data['j_deadline']           	= $job_list->PaymentDeadlineUtc; //Same as old system
+		$data['j_hired_tutor_email']      = $job_list->TutorHiredId; //New system using tutor's email not ID
+		$data['j_remarks']           		= $job_list->Remarks; //Parent remarks? No longer in new job table
+		$data['j_start_date']           	= $job_list->StartDateUtc; //Same as old system
+		$data['j_end_date']           	= $job_list->EndDateUtc; //Same as old system
+		//$data['j_admincomment']           	= $job_list->AdminComment; //No admin Comment Exist on new DB
+		$data['j_create_date']           	= $job_list->CreatedOnUtc; //Same as old system
+		$data['j_subject']           		= $job_list->SubJect; //Refer to tk_tutor_subject table, no longer in job table
+		//$data['j_create_date']           	= $job_list->DateUtc;	//Shows date only
+		$data['j_state']           		= $job_list->State; //New system using ID instead of string
+		$data['j_telephone']           	= $job_list->Phone; //Same as old system
+		$data['j_lesson']           		= $job_list->Lesson; //new system inside class table
+		
+		
         // Collect data for only tutor with activated status 
 		if ($info_obj->Type == 'tutor' && $info_obj->TutorRegistrationStatus == 'Activated'){
 			$data['ud_client_status']      = ($info_obj->Type == 'tutor') ? 'Not Selected' : 'Parent' ;
@@ -439,7 +524,7 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
         // $data['ud_postal_code']         = $info_obj->Username;
         $data['ud_address']             = $info_obj->StreetAddress;  //Add Address
         // $data['ud_address2']            = $info_obj->Username;
-        // $data['ud_country']             = $info_obj->Username;
+        $data['ud_country']            = "Malaysia";//$info_obj->Username;
        
         $data['ud_city']                = $info_obj->City;
         $data['ud_dob']                 = $info_obj->DateOfBirth;
@@ -447,30 +532,28 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
         $data['ud_race']                = $info_obj->Race;
         $data['ud_marital_status']      = ($info_obj->IsMarried == False) ? 'Not Married' : 'Married';
         //hardcode nationality
-         $data['ud_nationality']         = "Malaysian";//$info_obj->Username;
-         $data['ud_admin_comment']       = $info_obj->AdminComment; //add admin comment
-         $data['ud_tutor_status']        = ($info_obj->IsFullTime =='True') ? 'Full Time' : 'Part Time';
-         //Occupation
-         $data['ud_current_occupation']    = $info_obj->Occupation;
-         $data['ud_current_occupation_other']    = $info_obj->OccupationOther;
-         $data['ud_tutor_experience']    = $info_obj->YearsOfExperience;
-         $data['ud_about_yourself']      = $info_obj->SelfDescription;
-        // $data['ud_rate_per_hour']       = $info_obj->Username;
-         $data['ud_qualification']       = $info_obj->Qualifications;
+		$data['ud_nationality']         = "Malaysian";//$info_obj->Username;
+		$data['ud_admin_comment']       = $info_obj->AdminComment; //add admin comment
+		$data['ud_tutor_status']        = ($info_obj->IsFullTime =='True') ? 'Full Time' : 'Part Time';
+		//Occupation
+		$data['ud_current_occupation']    = $info_obj->Occupation;
+		$data['ud_current_occupation_other']    = $info_obj->OccupationOther;
+		$data['ud_tutor_experience']    = $info_obj->YearsOfExperience;
+		$data['ud_about_yourself']      = $info_obj->SelfDescription;
+		// $data['ud_rate_per_hour']       = $info_obj->Username;
+		$data['ud_qualification']       = $info_obj->Qualifications;
         
         // $data['ud_client_status_2']     = $info_obj->Username;
         $data['u_country_id']           = 150;
 		//$data['u_state']           		= $info_obj->State;
-		$data['u_LastIpAddress']       = $info_obj->LastIpAddress;	
-		$data['u_LastVisitedPage']     = $info_obj->LastVisitedPage;
-		$data['u_CreatedOnUtc']        = $info_obj->CreatedOnUtc;
+		$data['u_LastIpAddress']       	= $info_obj->LastIpAddress;	 //Add IP address
+		$data['u_LastVisitedPage']     	= $info_obj->LastVisitedPage;	//Not exists in new DB
+		$data['u_CreatedOnUtc']        	= $info_obj->CreatedOnUtc;	//Add Creation Date
 		
 		
         /*if ($i_decode->data[0]->id == 229) {
             exit();
-        }
-*/		//$$count==0;
-
+        }*/	
 
 		//Add role import modification
 //		$data['u_role']    = $info_obj->Occupation;
@@ -491,12 +574,8 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
         $thisInit->ImportData($data);
 	        } catch (Exception $e) {
 	 	   			echo 'Caught exception: ',  $e->getMessage(), "\n";
-				  }
-    
-	
-
-
-			}
+		}
+	}
 }
  mig();
 ?>
