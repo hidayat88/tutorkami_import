@@ -110,6 +110,7 @@ class db {
 		//Add missing Option
 		$LastIpAddress      = isset($data['u_LastIpAddress']) ? $this->RealEscape($data['u_LastIpAddress']) : '';
 		$LastVisitedPage	= isset($data['u_LastVisitedPage']) ? $this->RealEscape($data['u_LastVisitedPage']) : '';
+		$u_modified_date	= isset($data['u_modified_date']) ? $this->RealEscape($data['u_modified_date']) : '';
 		$CreatedOnUtc		= isset($data['u_CreatedOnUtc']) ? $this->RealEscape($data['u_CreatedOnUtc']) : '';
 		$PayingClient		= isset($data['u_paying_client']) ? $this->RealEscape($data['u_paying_client']) : 'P'; //P: not check
 		$u_id				= isset($data['u_id']) ? $this->RealEscape($data['u_id']) : '';
@@ -126,12 +127,14 @@ class db {
 		$j_duration			= isset($data['j_duration']) ? $this->RealEscape($data['j_duration']) : '';
 		$j_status			= (isset($data['j_status']) && $data['j_status'] == 0)? 'Closed':'Open'; //0:Close, 1:Open.
 		$j_payment_status	= (isset($data['j_payment_status']) && $data['j_payment_status'] == False)? 'Pending':'Paid'; //0:pending, 1:paid
-		$j_deadline			= isset($data['j_deadline']) ? $this->RealEscape($data['j_deadline']) : '';
+		$j_deadline			= isset($data['j_deadline']) ? $this->RealEscape($data['j_deadline']) : 'NULL';
 		$j_start_date		= isset($data['j_start_date']) ? $this->RealEscape($data['j_start_date']) : '';
 		$j_end_date			= isset($data['j_end_date']) ? $this->RealEscape($data['j_end_date']) : '';
 		$j_create_date		= isset($data['j_create_date']) ? $this->RealEscape($data['j_create_date']) : '';
 		$j_telephone		= isset($data['j_telephone']) ? $this->RealEscape($data['j_telephone']) : '';
+		$j_state			= isset($data['j_state']) ? $this->RealEscape($data['j_state']) : '';
 		$j_country_id 		= '150';
+		$j_level			= isset($data['j_level']) ? $this->RealEscape($data['j_level']) : '';
 		
 		//Add Job Translation
 		$j_subject			= isset($data['j_subject']) ? $this->RealEscape($data['j_subject']) : '';
@@ -150,13 +153,50 @@ class db {
             (
                 j_id = '{$j_id}' 
 			)"; 
-  
 		$j_qry = $thisDB->query($j_sql);
+		
+
+		
 		
 		//role to integer number only, use old DB user ID to make ease of other OLD DB table transfer
 		if ($j_qry->num_rows == 0) {
+			
+		$j_sql_state = "SELECT * FROM ".DB_PREFIX."_states WHERE st_name = '{$j_state}'";
+		$j_qry_state = $thisDB->query($j_sql_state);		
+        $j_ar_row = $j_qry_state->fetch_array(MYSQLI_BOTH);
+        $j_st_id = $j_ar_row['st_id'];
+		
+		if ($j_level == "Pre-school") {
+			$j_level_Id		= "1";
+		}
+		else if ($j_level == "Standard 1 - 6 (UPSR)") {
+			$j_level_Id		= "3";
+		}
+		else if ($j_level == "Form 1 - 3 (PMR)") {
+			$j_level_Id		= "4";
+		}
+		else if ($j_level == "Form 4 - 5 (SPM)") {
+			$j_level_Id		= "5";
+		}
+		else if ($j_level == "Primary (Year 1 - 6) / Elementary School (1st - 5th Grade)") {
+			$j_level_Id		= "6";
+		}
+		else if ($j_level == "Secondary (Year 7 - 9) / Middle School (6th - 8th Grade)") {
+			$j_level_Id		= "7";
+		}
+		else if ($j_level == "Year 10 - 11 (IGCSE / O-Levels)") {
+			$j_level_Id		= "8";
+		}
+		else if ($j_level == "Others / Non-Academics") {
+			$j_level_Id		= "9";
+		}
+		else {
+			goto Job_Translate; //Skip the process goto testimonial
+		}
+		//var_dump($j_level_Id);
 			$j_sqli = "INSERT INTO ".DB_PREFIX."_job SET
 				j_id = '{$j_id}',
+				j_jl_id = '".$j_level_Id."',
 				j_email = '".$j_email."',
 				j_area = '".$j_area."',
 				j_rate = '".$j_rate."',
@@ -170,12 +210,16 @@ class db {
 				j_end_date  = '".date('Y-m-d',strtotime($j_end_date))."',
 				j_create_date = '".date('Y-m-d H:i:s',strtotime($j_create_date))."',
 				j_telephone = '".$j_telephone."',
+				j_state_id = '{$j_st_id}',
 				j_country_id = '{$j_country_id}',
 				j_modified_date = '".date('Y-m-d H:i:s')."'
 			";
 			$j_exe = $thisDB->query($j_sqli);
-		}
 			
+			
+		}
+		
+		Job_Translate:
 		// Job Translation migration
 		$jt_sql = "SELECT * FROM ".DB_PREFIX."_job_translation WHERE 
             (
@@ -218,16 +262,7 @@ class db {
 		
 		//role to integer number only, use old DB user ID to make ease of other OLD DB table transfer
 		if ($t_qry->num_rows == 0) {
-			$t_sqli = "INSERT INTO ".DB_PREFIX."_user_testimonial SET
-				ut_u_id = '{$u_id}',
-				ut_user_testimonial1 = '".$ut_user_testimonial1."',
-				ut_user_testimonial2 = '".$ut_user_testimonial2."',
-				ut_user_testimonial3 = '".$ut_user_testimonial3."',
-				ut_user_testimonial4 = '".$ut_user_testimonial4."',
-				ut_create_date = '".date('Y-m-d H:i:s')."',
-				j_duration = '".$j_duration."'
-			";
-			$t_exe = $thisDB->query($t_sqli);
+			
 		}
 		
         // Validation for user information
@@ -281,20 +316,39 @@ class db {
                     u_country_id  = '{$country_id}',
 					ip_address = '".$LastIpAddress."',
 					last_page = '".$LastVisitedPage."',
-					u_paying_client = '{$PayingClient}'
+					u_paying_client = '{$PayingClient}',
+					u_modified_date = '{$u_modified_date}'
+				";					
+                $exe = $thisDB->query($sqli);               
+                if ($exe){} else { echo $thisDB->error."<br>"; }
+				  
+                //user Testimonial
+                $t_sqli = "INSERT INTO ".DB_PREFIX."_user_testimonial SET
+				ut_u_id = '{$u_id}',
+				ut_user_testimonial1 = '".$ut_user_testimonial1."',
+				ut_user_testimonial2 = '".$ut_user_testimonial2."',
+				ut_user_testimonial3 = '".$ut_user_testimonial3."',
+				ut_user_testimonial4 = '".$ut_user_testimonial4."',
+				ut_create_date = '".date('Y-m-d H:i:s')."',
+				j_duration = '".$j_duration."'
 				";
-					
+				$t_exe = $thisDB->query($t_sqli);
 				
-                $exe = $thisDB->query($sqli);
-                
-                  if ($exe){} else { echo $thisDB->error."<br>"; }
-                
-                
+				// Convert city name ->city id->state id->state name
+				$ud_link_sql = 	"SELECT * FROM `tk_cities` 
+								INNER JOIN tk_states ON tk_states.st_id = tk_cities.city_st_id
+								WHERE tk_cities.city_name = '".$udcity."'
+								";
+				$ud_link_qry 		= $thisDB->query($ud_link_sql);		
+				$ud_link_ar_row 	= $ud_link_qry->fetch_array(MYSQLI_BOTH);
+				$ud_state_name 	 	= $ud_link_ar_row['st_name'];
+				//var_dump($ud_state_name);
+				
                 if($exe) {
                     $insert_iud = $thisDB->insert_id;
-
-                    $sq = "INSERT IGNORE INTO ".DB_PREFIX."_user_details SET
-                        ud_u_id         = '{$insert_iud}',
+				
+                    $sq = "INSERT INTO ".DB_PREFIX."_user_details SET
+                        ud_u_id         = '{$u_id}',
                         ud_first_name   = '{$firstname}',
                         ud_last_name    = '{$lastname}',
                         ud_dob          = '{$ud_dob}',
@@ -302,10 +356,10 @@ class db {
                         ud_address      = '{$address}',
                         ud_address2     = '{$address2}',
                         ud_country      = '{$udcountry}',
-                        ud_state        = '{$udstate}',
+                        ud_state        = '{$ud_state_name}',
                         ud_city         = '{$udcity}',
                         ud_postal_code  = '{$postalco}',
-                        ud_company_name = '{$company_name}',
+                        ud_current_company = '{$company_name}',
                         ud_race         = '{$race}',
                         ud_marital_status  = '{$marital_status}',
                         ud_nationality  = '{$nationality}',
@@ -317,11 +371,12 @@ class db {
                         ud_about_yourself = '{$about_yourself}',
                         ud_qualification = '{$qualification}',
                         ud_tutor_status = '{$tutor_status}',
-						ud_proof_of_accepting_terms = '{$ud_proof_of_accepting_terms}'
+						ud_proof_of_accepting_terms = 'files/proof_000{$ud_proof_of_accepting_terms}.jpeg'
 					";
-                    
+                    //Modified proof accpeting terms to new system file directory, just copy old images and put into files folder
                     $exe = $thisDB->query($sq);
                   
+				  
                    // var_dump($sq);
                     if($exe) {
                         $er = 0;
@@ -432,8 +487,6 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
                 $ar_sql = "SELECT `st_id` FROM `".DB_PREFIX."_states` WHERE LOWER(`st_name`) = '".strtolower($st_name)."'";
                 $ar_qry = $thisDB->query($ar_sql);
                 $ar_num = $ar_qry->num_rows;
-
-               
                 
                 $state_id ="";
                 if ($ar_num > 0) {
@@ -448,7 +501,7 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
                 if (array_search($state_id, array_column ($data, 'cover_area_state'))) {
                // if (array_search($state_id, $data['cover_area_state']) == false) {
                     $data['cover_area_state'][] = $state_id;
-					var_dump($state_id);
+					//var_dump($state_id);
                   
                 }            
                 //var_dump ($state_id);
@@ -545,26 +598,27 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
 		//Collect Job Info from OLD DB
 		$data['j_id']            			= $job_list->id; //Use old DB ID to link Job
 		$data['j_level']            		= $job_list->Level; //Level refer to tk_level table
-		$data['j_area']            		= $job_list->Area;	//Same as old system
-		$data['j_email']    				= $job_list->ContactPersonId; //new system using customer's email not ID
-		$data['j_rate']            		= $job_list->Rate; //Rate per hour
-		$data['j_preferred_date_time']    = $job_list->PreferredTimes; //Same as old system
-		$data['j_commission']          	= $job_list->Commission; //Same as old system
-		$data['j_duration']				= $job_list->DurationOfEngagement; //Same as old system
+		$data['j_area']            			= $job_list->Area;	//Same as old system
+		$data['j_email']    				= $job_list->CustomerEmail; //new system using customer's email not ID
+		$data['j_rate']            			= $job_list->Rate; //Rate per hour
+		$data['j_preferred_date_time']    	= $job_list->PreferredTimes; //Same as old system
+		$data['j_commission']          		= $job_list->Commission; //Same as old system
+		$data['j_duration']					= $job_list->DurationOfEngagement; //Same as old system
 		$data['j_status']           		= $job_list->StatusId; //new system using Open:0, Close:1 or nego:2
-		$data['j_payment_status']         = $job_list->PaymentStatusId; //New system pending:0, paid:1
-		$data['j_deadline']           	= $job_list->PaymentDeadlineUtc; //Same as old system
-		$data['j_hired_tutor_email']      = $job_list->TutorHiredId; //New system using tutor's email not ID
+		$data['j_payment_status']         	= $job_list->PaymentStatusId; //New system pending:0, paid:1
+		$data['j_deadline']           		= $job_list->PaymentDeadlineUtc; //Same as old system
+		$data['j_hired_tutor_email']     	= $job_list->TutorEmail; //New system using tutor's email not ID
 		$data['j_remarks']           		= $job_list->Remarks; //Parent remarks? No longer in new job table
 		$data['j_start_date']           	= $job_list->StartDateUtc; //Same as old system
-		$data['j_end_date']           	= $job_list->EndDateUtc; //Same as old system
-		$data['j_comment']           	= $job_list->AdminComment; //No admin Comment Exist on new DB, just comment
+		$data['j_end_date']           		= $job_list->EndDateUtc; //Same as old system
+		$data['j_comment']           		= $job_list->AdminComment; //No admin Comment Exist on new DB, just comment
 		$data['j_create_date']           	= $job_list->CreatedOnUtc; //Same as old system
 		$data['j_subject']           		= $job_list->SubJect; //Refer to tk_tutor_subject table, no longer in job table
 		//$data['j_create_date']           	= $job_list->DateUtc;	//Shows date only
-		$data['j_state']           		= $job_list->State; //New system using ID instead of string
-		$data['j_telephone']           	= $job_list->Phone; //Same as old system
+		$data['j_state']           			= $job_list->State; //New system using ID instead of string
+		$data['j_telephone']           		= $job_list->Phone; //Same as old system
 		$data['j_lesson']           		= $job_list->Lesson; //new system inside class table
+		
 		
 		
         // Collect data for only tutor with activated status 
@@ -608,13 +662,14 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
 		$data['ud_current_occupation_other']    = $info_obj->OccupationOther;
 		$data['ud_tutor_experience']    = $info_obj->YearsOfExperience;
 		$data['ud_about_yourself']      = $info_obj->SelfDescription;
-		// $data['ud_rate_per_hour']       = $info_obj->Username;
+
 		$data['ud_qualification']       = $info_obj->Qualifications;        
         // $data['ud_client_status_2']     = $info_obj->Username;
         $data['u_country_id']           = 150;
 		//$data['u_state']           		= $info_obj->State;
 		$data['u_LastIpAddress']       	= $info_obj->LastIpAddress;	 //Add IP address
 		$data['u_LastVisitedPage']     	= $info_obj->LastVisitedPage;	//Not exists in new DB
+		$data['u_modified_date']		= $info_obj->LastActivityDateUtc;
 		$data['u_CreatedOnUtc']        	= $info_obj->CreatedOnUtc;	//Add Creation Date
 		$data['ut_user_testimonial1']   = $info_obj->Testimonial1Id;	//Add Testimonial 1
 		$data['ut_user_testimonial2']   = $info_obj->Testimonial2Id;	//Add Testimonial 2
@@ -624,7 +679,7 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
 		
 		
 	//The ID at 1st column is fixed to takeoff the redundant and re-add of the rows. The migration is manually assigned
-			// Job Level ID creation
+			// Job Level Manual ID creation
 			$jl_sqli = "INSERT INTO ".DB_PREFIX."_job_level (jl_id,jl_status,jl_country_id,jl_create_date,jl_modified_date)
 						VALUES 	(1,'A','150','".date('Y-m-d H:i:s')."','".date('Y-m-d H:i:s')."'),
 								(2,'A','150','".date('Y-m-d H:i:s')."','".date('Y-m-d H:i:s')."'),
