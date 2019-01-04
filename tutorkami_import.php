@@ -1,12 +1,13 @@
 
 <?php 
-require_once('config.php');
+require_once('config.php.inc');
 
-
+ini_set('max_execution_time', 80); //Add External PHP max exec timer in seconds. Set 0 for infinity timer.
 
 class db {
     var $conn;
 	var $count;
+	//var $count1;
     function __construct() {
         session_start();
     }
@@ -36,8 +37,8 @@ class db {
         }
         return $data;
     }
-
-    function UltimateCurlSend($URL, $method = 'GET', $data = NULL) {
+    
+	function UltimateCurlSend($URL, $method = 'GET', $data = NULL) {
         // CURL
         if ($method == 'GET') {
             $ch = curl_init();
@@ -134,8 +135,12 @@ class db {
 		$j_telephone		= isset($data['j_telephone']) ? $this->RealEscape($data['j_telephone']) : '';
 		$j_state			= isset($data['j_state']) ? $this->RealEscape($data['j_state']) : '';
 		$j_country_id 		= '150';
-		$j_level			= isset($data['j_level']) ? $this->RealEscape($data['j_level']) : '';
-		
+		$j_level			= isset($data['j_level']) ? $this->RealEscape($data['j_level']) : '';		
+		$j_tutor_hiredID	= isset($data['j_tutor_hiredID']) ? $this->RealEscape($data['j_tutor_hiredID']) : ''; //Added to support tutors applied
+		$j_hired_tutor_email= isset($data['j_hired_tutor_email']) ? $this->RealEscape($data['j_hired_tutor_email']) : ''; //Added to support tutors applied
+		$ja_job_id			= isset($data1['ja_job_id']) ? $this->RealEscape1($data1['ja_job_id']) : ''; //Added to support tutors applied
+		$ja_customer_id		= isset($data1['ja_customer_id']) ? $this->RealEscape1($data1['ja_customer_id']) : ''; //Added to support tutors applied
+
 		//Add Job Translation
 		$j_subject			= isset($data['j_subject']) ? $this->RealEscape($data['j_subject']) : '';
 		$j_lesson			= isset($data['j_lesson']) ? $this->RealEscape($data['j_lesson']) : '';
@@ -161,110 +166,113 @@ class db {
 		//role to integer number only, use old DB user ID to make ease of other OLD DB table transfer
 		if ($j_qry->num_rows == 0) {
 			
-		$j_sql_state = "SELECT * FROM ".DB_PREFIX."_states WHERE st_name = '{$j_state}'";
-		$j_qry_state = $thisDB->query($j_sql_state);		
-        $j_ar_row = $j_qry_state->fetch_array(MYSQLI_BOTH);
-        $j_st_id = $j_ar_row['st_id'];
-		
-		if ($j_level == "Pre-school") {
-			$j_level_Id		= "1";
-		}
-		else if ($j_level == "Standard 1 - 6 (UPSR)") {
-			$j_level_Id		= "3";
-		}
-		else if ($j_level == "Form 1 - 3 (PMR)") {
-			$j_level_Id		= "4";
-		}
-		else if ($j_level == "Form 4 - 5 (SPM)") {
-			$j_level_Id		= "5";
-		}
-		else if ($j_level == "Primary (Year 1 - 6) / Elementary School (1st - 5th Grade)") {
-			$j_level_Id		= "6";
-		}
-		else if ($j_level == "Secondary (Year 7 - 9) / Middle School (6th - 8th Grade)") {
-			$j_level_Id		= "7";
-		}
-		else if ($j_level == "Year 10 - 11 (IGCSE / O-Levels)") {
-			$j_level_Id		= "8";
-		}
-		else if ($j_level == "Others / Non-Academics") {
-			$j_level_Id		= "9";
-		}
-		else {
-			goto Job_Translate; //Skip the process goto testimonial
-		}
-		//var_dump($j_level_Id);
-			$j_sqli = "INSERT INTO ".DB_PREFIX."_job SET
-				j_id = '{$j_id}',
-				j_jl_id = '".$j_level_Id."',
-				j_email = '".$j_email."',
-				j_area = '".$j_area."',
-				j_rate = '".$j_rate."',
-				j_preferred_date_time = '".$j_preferred_date_time."',
-				j_commission = '".$j_commission."',
-				j_duration = '".$j_duration."',
-				j_status = '".$j_status."',
-				j_payment_status = '".$j_payment_status."',                 
-				j_deadline = '".date('Y-m-d',strtotime($j_deadline))."',
-				j_start_date  = '".date('Y-m-d',strtotime($j_start_date))."',
-				j_end_date  = '".date('Y-m-d',strtotime($j_end_date))."',
-				j_create_date = '".date('Y-m-d H:i:s',strtotime($j_create_date))."',
-				j_telephone = '".$j_telephone."',
-				j_state_id = '{$j_st_id}',
-				j_country_id = '{$j_country_id}',
-				j_modified_date = '".date('Y-m-d H:i:s')."'
-			";
-			$j_exe = $thisDB->query($j_sqli);
+			$j_sql_state = "SELECT * FROM ".DB_PREFIX."_states WHERE st_name = '{$j_state}'";
+			$j_qry_state = $thisDB->query($j_sql_state);		
+			$j_ar_row = $j_qry_state->fetch_array(MYSQLI_BOTH);
+			$j_st_id = $j_ar_row['st_id'];
 			
 			
-		}
-		
-		Job_Translate:
-		// Job Translation migration
-		$jt_sql = "SELECT * FROM ".DB_PREFIX."_job_translation WHERE 
-            (
-                jt_j_id = '{$j_id}' 
-			)"; //Refer to the tk_job id table
-  
-		$jt_qry = $thisDB->query($jt_sql);
-		
-		if ($jt_qry->num_rows == 0) {
-			//Add English Translation
-			$jt_sqli_en = "INSERT INTO ".DB_PREFIX."_job_translation SET
-				jt_j_id = '{$j_id}',
-				jt_lang_code = 'en',
-				jt_subject = '".$j_subject."',
-				jt_lessons = '".$j_lesson."',
-				jt_remarks = '".$j_remarks."',
-				jt_comments = '".$j_comment."'
-			";
-			$jt_exe_en = $thisDB->query($jt_sqli_en);
-			//Add Malay Translation
-			$jt_sqli_ms = "INSERT INTO ".DB_PREFIX."_job_translation SET
-				jt_j_id = '{$j_id}',
-				jt_lang_code = 'ms',
-				jt_subject = '".$j_subject."',
-				jt_lessons = '".$j_lesson."',
-				jt_remarks = '".$j_remarks."',
-				jt_comments = '".$j_comment."'
-			";
-			$jt_exe_ms = $thisDB->query($jt_sqli_ms);
+			//Job Applied migrated for tutors who have been awarded for the job
+				if ($j_tutor_hiredID!=NULL){
+				$ja_sqli1 = "INSERT IGNORE INTO ".DB_PREFIX."_applied_job SET
+						aj_j_id = {$j_id},
+						aj_u_id = {$j_tutor_hiredID},
+						aj_status = 'A',
+						aj_date	= '".date('Y-m-d H:i:s')."'			
+						";
+				$ja_qry1 = $thisDB->query($ja_sqli1);
+				}
+				//VAR_DUMP($j_tutor_hiredID);
+			
+			//To skip the old outside categories job
+				if ($j_level == "Pre-school") {
+					$j_level_Id		= "1";
+				}
+				else if ($j_level == "Standard 1 - 6 (UPSR)") {
+					$j_level_Id		= "3";
+				}
+				else if ($j_level == "Form 1 - 3 (PMR)") {
+					$j_level_Id		= "4";
+				}
+				else if ($j_level == "Form 4 - 5 (SPM)") {
+					$j_level_Id		= "5";
+				}
+				else if ($j_level == "Primary (Year 1 - 6) / Elementary School (1st - 5th Grade)") {
+					$j_level_Id		= "6";
+				}
+				else if ($j_level == "Secondary (Year 7 - 9) / Middle School (6th - 8th Grade)") {
+					$j_level_Id		= "7";
+				}
+				else if ($j_level == "Year 10 - 11 (IGCSE / O-Levels)") {
+					$j_level_Id		= "8";
+				}
+				else if ($j_level == "Others / Non-Academics") {
+					$j_level_Id		= "9";
+				}
+				else {
+					goto Check_validation; //Skip the process goto Check_validation
+				}
+					//$count1 = $count1 + 1;
+					if ($j_id==$j_id ){ //To make sure only existed job id will be imported		
+					//var_dump($j_level_Id);
+						$j_sqli = "INSERT INTO ".DB_PREFIX."_job SET
+									j_id = '{$j_id}',
+									j_jl_id = '".$j_level_Id."',
+									j_email = '".$j_email."',
+									j_area = '".$j_area."',
+									j_rate = '".$j_rate."',
+									j_preferred_date_time = '".$j_preferred_date_time."',
+									j_commission = '".$j_commission."',
+									j_duration = '".$j_duration."',
+									j_status = '".$j_status."',
+									j_payment_status = '".$j_payment_status."',                 
+									j_deadline = '".date('Y-m-d',strtotime($j_deadline))."',
+									j_hired_tutor_email = '{$j_hired_tutor_email}',
+									j_start_date  = '".date('Y-m-d',strtotime($j_start_date))."',
+									j_end_date  = '".date('Y-m-d',strtotime($j_end_date))."',
+									j_create_date = '".date('Y-m-d H:i:s',strtotime($j_create_date))."',
+									j_telephone = '".$j_telephone."',
+									j_state_id = '{$j_st_id}',
+									j_country_id = '{$j_country_id}',
+									j_modified_date = '".date('Y-m-d H:i:s')."'
+									";
+						$j_exe = $thisDB->query($j_sqli);
+					}			
+			}
+			
+			
+			// Job Translation migration
+			$jt_sql = "SELECT * FROM ".DB_PREFIX."_job_translation WHERE 
+				(
+					jt_j_id = '{$j_id}' 
+				)"; //Refer to the tk_job id table
+	  
+			$jt_qry = $thisDB->query($jt_sql);
+			
+			if ($jt_qry->num_rows == 0) {
+				//Add English Translation
+				$jt_sqli_en = "INSERT INTO ".DB_PREFIX."_job_translation SET
+					jt_j_id = '{$j_id}',
+					jt_lang_code = 'en',
+					jt_subject = '".$j_subject."',
+					jt_lessons = '".$j_lesson."',
+					jt_remarks = '".$j_remarks."',
+					jt_comments = '".$j_comment."'
+				";
+				$jt_exe_en = $thisDB->query($jt_sqli_en);
+				//Add Malay Translation
+				$jt_sqli_ms = "INSERT INTO ".DB_PREFIX."_job_translation SET
+					jt_j_id = '{$j_id}',
+					jt_lang_code = 'ms',
+					jt_subject = '".$j_subject."',
+					jt_lessons = '".$j_lesson."',
+					jt_remarks = '".$j_remarks."',
+					jt_comments = '".$j_comment."'
+				";
+				$jt_exe_ms = $thisDB->query($jt_sqli_ms);
 		}
 
-			
-		// Testimonial info migration
-		$t_sql = "SELECT * FROM ".DB_PREFIX."_user_testimonial WHERE 
-            (
-                ut_u_id = '{$u_id}' 
-			)"; 
-  
-		$t_qry = $thisDB->query($t_sql);
-		
-		//role to integer number only, use old DB user ID to make ease of other OLD DB table transfer
-		if ($t_qry->num_rows == 0) {
-			
-		}
-		
+		Check_validation:
         // Validation for user information
         if ($username == '') {
             $res = array('flag' => 'error', 'message' => 'Username is required.');
@@ -301,7 +309,7 @@ class db {
             
 			//role to integer number only, use old DB user ID to make ease of other OLD DB table transfer
             if ($qry->num_rows == 0) {
-                $sqli = "INSERT INTO ".DB_PREFIX."_user SET
+                $sqli = "INSERT IGNORE INTO ".DB_PREFIX."_user SET
 					u_id = '{$u_id}',
                     u_email = '".$email."',
                     u_username = '".$username."',
@@ -322,22 +330,23 @@ class db {
                 $exe = $thisDB->query($sqli);               
                 if ($exe){} else { echo $thisDB->error."<br>"; }
 				  
-                //user Testimonial
-                $t_sqli = "INSERT INTO ".DB_PREFIX."_user_testimonial SET
+                //Tutors Testimonial migration
+				if ($ut_user_testimonial1 !='x'){ //To make sure the 1st testimonial must be filled in
+                $t_sqli = "INSERT IGNORE INTO ".DB_PREFIX."_user_testimonial SET
 				ut_u_id = '{$u_id}',
 				ut_user_testimonial1 = '".$ut_user_testimonial1."',
 				ut_user_testimonial2 = '".$ut_user_testimonial2."',
 				ut_user_testimonial3 = '".$ut_user_testimonial3."',
 				ut_user_testimonial4 = '".$ut_user_testimonial4."',
-				ut_create_date = '".date('Y-m-d H:i:s')."',
-				j_duration = '".$j_duration."'
+				ut_create_date = '".date('Y-m-d H:i:s')."'
 				";
 				$t_exe = $thisDB->query($t_sqli);
+				}
 				
 				// Convert city name ->city id->state id->state name
 				$ud_link_sql = 	"SELECT * FROM `tk_cities` 
 								INNER JOIN tk_states ON tk_states.st_id = tk_cities.city_st_id
-								WHERE tk_cities.city_name = '".$udcity."'
+								WHERE tk_cities.city_name LIKE '%".$udcity."%'
 								";
 				$ud_link_qry 		= $thisDB->query($ud_link_sql);		
 				$ud_link_ar_row 	= $ud_link_qry->fetch_array(MYSQLI_BOTH);
@@ -346,8 +355,8 @@ class db {
 				
                 if($exe) {
                     $insert_iud = $thisDB->insert_id;
-				
-                    $sq = "INSERT INTO ".DB_PREFIX."_user_details SET
+					if ($ud_proof_of_accepting_terms != 'x'){	//proof not x
+                    $sq = "INSERT IGNORE INTO ".DB_PREFIX."_user_details SET
                         ud_u_id         = '{$u_id}',
                         ud_first_name   = '{$firstname}',
                         ud_last_name    = '{$lastname}',
@@ -375,7 +384,38 @@ class db {
 					";
                     //Modified proof accpeting terms to new system file directory, just copy old images and put into files folder
                     $exe = $thisDB->query($sq);
-                  
+					}
+					
+					if ($ud_proof_of_accepting_terms == 'x'){ //proof is x
+                    $sq1 = "INSERT IGNORE INTO ".DB_PREFIX."_user_details SET
+                        ud_u_id         = '{$u_id}',
+                        ud_first_name   = '{$firstname}',
+                        ud_last_name    = '{$lastname}',
+                        ud_dob          = '{$ud_dob}',
+                        ud_phone_number = '{$phonenum}',
+                        ud_address      = '{$address}',
+                        ud_address2     = '{$address2}',
+                        ud_country      = '{$udcountry}',
+                        ud_state        = '{$ud_state_name}',
+                        ud_city         = '{$udcity}',
+                        ud_postal_code  = '{$postalco}',
+                        ud_current_company = '{$company_name}',
+                        ud_race         = '{$race}',
+                        ud_marital_status  = '{$marital_status}',
+                        ud_nationality  = '{$nationality}',
+                        ud_admin_comment = '{$admin_comment}',
+                        ud_client_status = '{$ud_client_status}',
+                        ud_tutor_experience = '{$tutor_experience}',
+                        ud_current_occupation = '{$occupation}',
+                        ud_current_occupation_other = '{$occupationother}',
+                        ud_about_yourself = '{$about_yourself}',
+                        ud_qualification = '{$qualification}',
+                        ud_tutor_status = '{$tutor_status}',
+						ud_proof_of_accepting_terms = '{$ud_proof_of_accepting_terms}'
+					";
+                    //Modified proof accpeting terms to new system file directory, just copy old images and put into files folder
+                    $exe = $thisDB->query($sq1);
+					}
 				  
                    // var_dump($sq);
                     if($exe) {
@@ -453,16 +493,18 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
 	//var_dump($thisInit);
     $thisDB = $thisInit->con_db();
 
-   $result = $thisInit->UltimateCurlSend('http://localhost:4190/api/tutorkami/GetMemberID');
+   $result = $thisInit->UltimateCurlSend('http://tutorkami.azurewebsites.net/api/tutorkami/GetMemberID');
+   $result_j = $thisInit->UltimateCurlSend('http://tutorkami.azurewebsites.net/api/tutorkami/GetJob');
    
-
     $r_decode = json_decode($result);		//Member ID decode using json listing
+	$r_decode_j = json_decode($result_j);		//Member ID decode using json listing
 	
 	//var_dump($jobmapping);
     // echo "<pre>";
+
     foreach ($r_decode->data as $key => $value) {
 
-        $info_res = $thisInit->UltimateCurlSend('http://localhost:4190/api/tutorkami/GetMemberInfo?id='.$value->UserId);
+        $info_res = $thisInit->UltimateCurlSend('http://tutorkami.azurewebsites.net/api/tutorkami/GetMemberInfo?id='.$value->UserId);
         $i_decode = json_decode($info_res);
 
         /*print_r($i_decode->data[0]);
@@ -494,7 +536,7 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
                     $state_id = $ar_row['st_id'];
                                                           
                 } else {
-                    $thisDB->query("INSERT INTO ".DB_PREFIX."_states SET st_name = '".$st_name."', st_c_id = '150', st_status = '1'");
+                    $thisDB->query("INSERT INGORE INTO ".DB_PREFIX."_states SET st_name = '".$st_name."', st_c_id = '150', st_status = '1'");
                     $state_id = $thisDB->insert_id;
                 }
 				//New code to remove warning
@@ -517,7 +559,7 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
                     $city_id = $ars_row['city_id'];
                 } else {
                   
-                    $thisDB->query("INSERT INTO ".DB_PREFIX."_cities SET city_name = '".$city_name."', city_st_id = '".$state_id."', city_status = '1'");
+                    $thisDB->query("INSERT IGNORE INTO ".DB_PREFIX."_cities SET city_name = '".$city_name."', city_st_id = '".$state_id."', city_status = '1'");
                     $city_id = $thisDB->insert_id;
                    // echo $thisDB->error;
                 }
@@ -586,15 +628,43 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
         }
 		$count1 = $count1+1;
 		// Add Job Migration
-		$jobmapping = $thisInit->UltimateCurlSend('http://localhost:4190/api/tutorkami/GetJobInfo?id='.$count1); //Get Job list
-		$j_decode = json_decode($jobmapping);	//Job Mapping Decode using json listing
+		$jobmap = $thisInit->UltimateCurlSend('http://tutorkami.azurewebsites.net/api/tutorkami/GetJobInfo?id='.$count1); //Get Job list
+		$j_decode = json_decode($jobmap);	//Job Mapping Decode using json listing		
 		$job_list = $j_decode->data[0];	//Store decoded Job list to array table
-        $data = array();
+        $data = array($job_list);
+
+		$jobapplied = $thisInit->UltimateCurlSend('http://tutorkami.azurewebsites.net/api/tutorkami/GetCustomerJobMapping?id='.$count1); //Get Job Appliedlist
+		$ja_decode = json_decode($jobapplied,true);	//Job Mapping Decode using json listing
+
+		$j_tutor_hiredID1 = $job_list->TutorHiredId;
+		$j_id1			 = $job_list->id;
 		
-		//$TutorHiredId = $job_list->TutorHiredId;
-		/*foreach (){
-			
-		}*/
+		// Job Applied migration
+		$ja_sql = "SELECT * FROM ".DB_PREFIX."_applied_job WHERE 
+            (
+                aj_j_id = '{$j_id1}' 
+			)"; //Refer to the tk_applied_job id table
+		$ja_qry = $thisDB->query($ja_sql);
+		
+		foreach ($ja_decode as $u => $z){
+			foreach ($z as $n => $line){
+			$ja_id 		= $line['Job_Id'];
+			$ja_customer_id	= $line['Customer_Id'];
+			if ($ja_qry->num_rows == 0) {
+				
+				if ($ja_id == $j_id1){ //To import to applied job table
+				$ja_sqli = "INSERT IGNORE INTO ".DB_PREFIX."_applied_job SET
+						aj_j_id = {$ja_id},
+						aj_u_id = {$ja_customer_id},
+						aj_status = 'P',
+						aj_date	= '".date('Y-m-d H:i:s')."'			
+						";
+					}
+				$ja_exe = $thisDB->query($ja_sqli);
+				}
+			}
+		}	
+		
 		//Collect Job Info from OLD DB
 		$data['j_id']            			= $job_list->id; //Use old DB ID to link Job
 		$data['j_level']            		= $job_list->Level; //Level refer to tk_level table
@@ -618,8 +688,8 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
 		$data['j_state']           			= $job_list->State; //New system using ID instead of string
 		$data['j_telephone']           		= $job_list->Phone; //Same as old system
 		$data['j_lesson']           		= $job_list->Lesson; //new system inside class table
-		
-		
+		$data['j_tutor_hiredID']           	= $job_list->TutorHiredId; //added to support job applied
+				
 		
         // Collect data for only tutor with activated status 
 		if ($info_obj->Type == 'tutor' && $info_obj->TutorRegistrationStatus == 'Activated'){
@@ -645,9 +715,9 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
         $data['ud_first_name']          = $info_obj->FirstName;
         $data['ud_last_name']           = $info_obj->LastName;
         $data['ud_phone_number']        = $info_obj->Phone;
-        // $data['ud_postal_code']         = $info_obj->Username;
+        // $data['ud_postal_code']         = $info_obj->;
         $data['ud_address']             = $info_obj->StreetAddress;  //Add Address
-        // $data['ud_address2']            = $info_obj->Username;
+        // $data['ud_address2']            = $info_obj->;
         $data['ud_country']            = "Malaysia";//$info_obj->Username;
        
         $data['ud_city']                = $info_obj->City;
@@ -664,7 +734,7 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
 		$data['ud_about_yourself']      = $info_obj->SelfDescription;
 
 		$data['ud_qualification']       = $info_obj->Qualifications;        
-        // $data['ud_client_status_2']     = $info_obj->Username;
+        // $data['ud_client_status_2']     = $info_obj->;
         $data['u_country_id']           = 150;
 		//$data['u_state']           		= $info_obj->State;
 		$data['u_LastIpAddress']       	= $info_obj->LastIpAddress;	 //Add IP address
@@ -680,7 +750,7 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
 		
 	//The ID at 1st column is fixed to takeoff the redundant and re-add of the rows. The migration is manually assigned
 			// Job Level Manual ID creation
-			$jl_sqli = "INSERT INTO ".DB_PREFIX."_job_level (jl_id,jl_status,jl_country_id,jl_create_date,jl_modified_date)
+			$jl_sqli = "INSERT IGNORE INTO ".DB_PREFIX."_job_level (jl_id,jl_status,jl_country_id,jl_create_date,jl_modified_date)
 						VALUES 	(1,'A','150','".date('Y-m-d H:i:s')."','".date('Y-m-d H:i:s')."'),
 								(2,'A','150','".date('Y-m-d H:i:s')."','".date('Y-m-d H:i:s')."'),
 								(3,'A','150','".date('Y-m-d H:i:s')."','".date('Y-m-d H:i:s')."'),
@@ -693,7 +763,7 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
 				";
 			$jl_exe = $thisDB->query($jl_sqli);
 			// Job Level Manual Transfer (Job Level Translation)
-			$jlt_sqli = "INSERT INTO ".DB_PREFIX."_job_level_translation (jlt_id,jlt_jl_id,jlt_lang_code,jlt_title,jlt_description)
+			$jlt_sqli = "INSERT IGNORE INTO ".DB_PREFIX."_job_level_translation (jlt_id,jlt_jl_id,jlt_lang_code,jlt_title,jlt_description)
 						VALUES 	(1,1,'en','Pre-School','Pre-School'),
 								(2,1,'BM','Pra-Sekolah','Pra-Sekolah'),
 								(3,2,'en','Standard 1 (Year 1-3)','Standard 1 (Year 1-3)'),
@@ -715,9 +785,9 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
 			";
 			$jlt_exe = $thisDB->query($jlt_sqli);
 		//To Stop data at certain record
-		if ($i_decode->data[0]->id == 50) {
+		/*if ($i_decode->data[0]->id == 50) {
             exit();
-        }
+        }*/
 
         if ($info_obj->id != 1) {
 			
