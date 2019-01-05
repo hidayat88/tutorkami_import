@@ -2,7 +2,7 @@
 <?php 
 require_once('config.php.inc');
 
-ini_set('max_execution_time', 80); //Add External PHP max exec timer in seconds. Set 0 for infinity timer.
+ini_set('max_execution_time', 60); //Add External PHP max exec timer in seconds. Set 0 for infinity timer.
 
 class db {
     var $conn;
@@ -159,10 +159,7 @@ class db {
                 j_id = '{$j_id}' 
 			)"; 
 		$j_qry = $thisDB->query($j_sql);
-		
-
-		
-		
+	
 		//role to integer number only, use old DB user ID to make ease of other OLD DB table transfer
 		if ($j_qry->num_rows == 0) {
 			
@@ -270,7 +267,7 @@ class db {
 					jt_comments = '".$j_comment."'
 				";
 				$jt_exe_ms = $thisDB->query($jt_sqli_ms);
-		}
+			}
 
 		Check_validation:
         // Validation for user information
@@ -416,15 +413,20 @@ class db {
                     //Modified proof accpeting terms to new system file directory, just copy old images and put into files folder
                     $exe = $thisDB->query($sq1);
 					}
-				  
+					
+					/*$courseSql = "INSERT INTO ".DB_PREFIX."_tutor_subject SET
+						 trs_u_id  = '{$insert_iud}',
+						 trs_tc_id = '{$cid}',
+						 trs_ts_id = '{$pid}'										
+						 ";
+					$courseSql_exe = $thisDB->query($courseSql);*/
+					
                    // var_dump($sq);
                     if($exe) {
-                        $er = 0;
-                        
+                       /* $er = 0;
+                        //Not working need to fix this
                         if (isset($data['cover_area_state']) && count($data['cover_area_state']) > 0) {
-              
                             foreach ($data['cover_area_state'] as $cid) {
-                 
                                 if (isset($data['cover_area_city_'.$cid]) && count($data['cover_area_city_'.$cid]) > 0) {
                                     foreach ($data['cover_area_city_'.$cid] as $key => $pid) {
                                         $areaSql = "INSERT INTO ".DB_PREFIX."_tutor_area_cover SET
@@ -438,21 +440,22 @@ class db {
                                     }
                                 }
                             }
-                        }
-                        
-                        if (isset($data['cover_area_other']) && $data['cover_area_other'] != '') {
+                        }*/
+                        //Skip import others
+                        /*if (isset($data['cover_area_other']) && $data['cover_area_other'] != '') {
                             $thisDB->query("INSERT INTO ".DB_PREFIX."_tutor_area_cover SET tac_u_id = '{$insert_iud}', tac_other = '".$data['cover_area_other']."'");
-                        }
-
-                        if (isset($data['tutor_course']) && count($data['tutor_course']) > 0) {
+                        }*/
+						//Need to fix this
+                       /* if (isset($data['tutor_course']) && count($data['tutor_course']) > 0) {
                             foreach ($data['tutor_course'] as $cid) {
-                              //  var_dump($cid);
+                                var_dump($cid);
                                 if (isset($data['tutor_subject_'.$cid]) && count($data['tutor_subject_'.$cid]) > 0) {
                                     foreach ($data['tutor_subject_'.$cid] as $key => $pid) {
                                         $courseSql = "INSERT INTO ".DB_PREFIX."_tutor_subject SET
                                          trs_u_id  = '{$insert_iud}',
                                          trs_tc_id = '{$cid}',
-                                         trs_ts_id = '{$pid}'";
+                                         trs_ts_id = '{$pid}'										
+										 ";
 
                                         if ($thisDB->query($courseSql)){} else {
                                             echo $thisDB->error."<br>";
@@ -461,13 +464,13 @@ class db {
                                     }
                                 }
                             }
-                        }
+                        }*/
 
-                        if ($er == 0) {
+                        /*if ($er == 0) {
                             $res = array('flag' => 'success', 'message' => 'Thank you for registering with us. Our team will get back to you shortly after verifying your account.', 'data' => $insert_iud);
                         } else {
                             $res = array('flag' => 'error', 'message' => 'Database error: '.$thisDB->error);
-                        }
+                        }*/
                         
                     } else {
                         $res = array('flag' => 'error', 'message' => 'Database error: '.$thisDB->error);
@@ -506,13 +509,13 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
 
         $info_res = $thisInit->UltimateCurlSend('http://tutorkami.azurewebsites.net/api/tutorkami/GetMemberInfo?id='.$value->UserId);
         $i_decode = json_decode($info_res);
-
+		
         /*print_r($i_decode->data[0]);
         echo "<br>";*/
 
         $info_obj = $i_decode->data[0];
-        $data = array();
-       
+        $data = array($info_obj);
+		
         // Area covered
         $area_covered = $info_obj->AreasCovered;
         $area_arr = explode(';', $area_covered);
@@ -540,8 +543,8 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
                     $state_id = $thisDB->insert_id;
                 }
 				//New code to remove warning
-                if (array_search($state_id, array_column ($data, 'cover_area_state'))) {
-               // if (array_search($state_id, $data['cover_area_state']) == false) {
+                if (array_search($state_id, array_column ($data, 'cover_area_state'))== false) {
+              // if (array_search($state_id, $data['cover_area_state'],false) == false) {
                     $data['cover_area_state'][] = $state_id;
 					//var_dump($state_id);
                   
@@ -564,10 +567,26 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
                    // echo $thisDB->error;
                 }
 				
-				if (array_search($city_id, array_column ($data, 'cover_area_city_'.$state_id))) {
-             // if (array_search($city_id, $data['cover_area_city_'.$state_id]) == false) {    
+				if (array_search($city_id, array_column ($data, 'cover_area_city_'.$state_id))== false) {
+             // if (array_search($city_id, $data['cover_area_city_'.$state_id],false) == false) {    
                     $data['cover_area_city_'.$state_id][] = $city_id;
                 }
+				//To avoid clone and redundant data
+				$tac_sql = "SELECT * FROM ".DB_PREFIX."_tutor_area_cover WHERE 
+				(
+					tac_id = '{$count1}' 
+				)"; 
+				$tac_qry = $thisDB->query($tac_sql);
+				
+				$tutor_u_id_ta = $info_obj->id; //Tutor User Id using in Tutor Areas covered and tutor subjects
+				if ($tac_qry -> num_rows == 0){
+				//var_dump($tutor_u_id_ta);
+				$areaSql = "INSERT IGNORE INTO ".DB_PREFIX."_tutor_area_cover SET
+                                         tac_u_id    = '{$tutor_u_id_ta}',
+                                         tac_st_id   = '{$state_id}',
+                                         tac_city_id = '{$city_id}'";
+				$areaSql_exe = $thisDB->query($areaSql); 
+				}
             }
         }
 
@@ -576,12 +595,63 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
         $course_arr = explode(';', $course_covered);
        
         
-        foreach ($course_arr as $course) {
+        foreach ($course_arr as $course) {	
             # code...
+			
+			// Tuition Course Manual Transfer
+			$tu_co_sql = "INSERT IGNORE INTO ".DB_PREFIX."_tution_course (tc_id,tc_title,tc_description,tc_status,tc_country_id,sort_by)
+						VALUES 	(1,'Pre-School','Pre-School','A','150','1'),
+								(2,'Tahap 1 (Tahun 1-3)','Lower Primary','A','150','2'),
+								(3,'Tahap 2 (UPSR)','Tahap 2 (UPSR)','A','150','3'),
+								(4,'Form 1-3 (PT3)','Form 1-3 (PT3)','A','150','4'),
+								(5,'Form 4 - 5 (SPM)','Upper Secondary (SPM)','A','150','5'),
+								(6,'Primary ( International Syllabus)','Primary (Cambridge)','A','150','6'),
+								(7,'Lower Secondary (International Syllabus)','Lower Secondary (IGCSE)','A','150','7'),
+								(8,'Year 10-11 (IGCSE)','Year 10-11 (IGCSE)','A','150','8'),
+								(9,'Others / Lain-lain','Others / Lain-lain','A','150','9')								
+						";
+			$tu_co_exe = $thisDB->query($tu_co_sql);
+			
             if($course != 'x') {
                 $c_arr = explode(':', $course);
                 $course_name = $c_arr[0];
                 $subject_name = $c_arr[1];
+				
+				// tuition Course search after added
+				/*$tc_sql_course = "SELECT * FROM ".DB_PREFIX."_tution_course WHERE tc_title = '{$course_name}'";
+				$tc_qry_course = $thisDB->query($tc_sql_course);		
+				$tc_ar_row = $tc_qry_course->fetch_array(MYSQLI_BOTH);
+				$tc_co_id = $tc_ar_row['tc_id'];  */
+				
+				
+				//To skip the old outside categories for tuition course
+				if ($course_name == "Pre-school") {
+					$course_name		= "Pre-school";
+				}
+				else if ($course_name == "Standard 1 - 6 (UPSR)") {
+					$course_name		= "Tahap 2 (UPSR)";
+				}
+				else if ($course_name == "Form 1 - 3 (PMR)"){
+					$course_name = "Form 1 - 3 (PT3)";
+				}
+				else if ($course_name == "Form 4 - 5 (SPM)") {
+					$course_name		= "Form 4 - 5 (SPM)";
+				}
+				else if ($course_name == "Primary (Year 1 - 6) / Elementary School (1st - 5th Grade)") {
+					$course_name		= "Primary ( International Syllabus)";
+				}
+				else if ($course_name == "Secondary (Year 7 - 9) / Middle School (6th - 8th Grade)") {
+					$course_name		= "Lower Secondary (International Syllabus)";
+				}
+				else if ($course_name == "Year 10 - 11 (IGCSE / O-Levels)") {
+					$course_name		= "Year 10-11 (IGCSE)";
+				}
+				else if ($course_name == "Others / Non-Academics") {
+					$course_name		= "Others / Lain-lain";
+				}
+				else {
+					goto Tuition_Course_End; //Skip the process goto Check_validation
+				}      
                 
                 // Course Data
                 $arcourse_sql = "SELECT `tc_id` FROM `".DB_PREFIX."_tution_course` WHERE LOWER(`tc_title`) = '".strtolower($course_name)."'";
@@ -593,19 +663,19 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
                 if ($arcourse_num > 0) {
                     $arcourse_row = $arcourse_qry->fetch_array(MYSQLI_BOTH);
                     $course_id = $arcourse_row['tc_id'];
-                } else {
+                } /*else {
                     $thisDB->query("INSERT INTO ".DB_PREFIX."_tution_course SET tc_title = '".$course_name."', tc_description = '".$course_name."', tc_country_id = '150', tc_status = 'A'");
                     $course_id = $thisDB->insert_id;
                   
-                }
+                }*/
                 
-                if (array_search($course_id, array_column ($data, 'tutor_course'))) {
-             //   if (array_search($course_id, $data['tutor_course']) == false) {        
+               if (array_search($course_id, array_column ($data, 'tutor_course'))== false) {
+                //if (array_search($course_id, $data['tutor_course'], false) == false) {        
                     $data['tutor_course'][] = $course_id;
                     }
                    
                 // Subject Data
-                    $subject_sql = "SELECT `ts_id` FROM `".DB_PREFIX."_tution_subject` WHERE LOWER(`ts_title`) = '".strtolower($subject_name)."' AND `ts_tc_id`='".$course_id."'"; 
+                $subject_sql = "SELECT `ts_id` FROM `".DB_PREFIX."_tution_subject` WHERE LOWER(`ts_title`) = '".strtolower($subject_name)."' AND `ts_tc_id`='".$course_id."'"; 
                 $subject_qry = $thisDB->query($subject_sql);
                 $subject_num = $subject_qry->num_rows;
                     
@@ -619,11 +689,37 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
                    echo $thisDB->error;
                 }
                 
-				if (array_search($subject_id, array_column ($data, 'tutor_subject_'.$course_id))) {
-             //   if (array_search($subject_id, $data['tutor_subject_'.$course_id]) == false) {    
+				if (array_search($subject_id, array_column ($data, 'tutor_subject_'.$course_id))== false) {
+                //if (array_search($subject_id, $data['tutor_subject_'.$course_id], false) == false) {    
                     $data['tutor_subject_'.$course_id][] = $subject_id;
                     
-                }             
+                }   
+				//var_dump($course_id);
+				//var_dump($subject_id);
+				//Subject search after added
+				/*$ts_sql_course = "SELECT * FROM ".DB_PREFIX."_tution_subject WHERE ts_title = '{$subject_name}'";
+				$ts_qry_course = $thisDB->query($ts_sql_course);		
+				$ts_ar_row = $ts_qry_course->fetch_array(MYSQLI_BOTH);
+				$ts_co_id = $ts_ar_row['ts_id']; */
+				
+				//To avoid clone and redundant data
+				$tsc_sql = "SELECT * FROM ".DB_PREFIX."_tutor_subject WHERE 
+				(
+					trs_id = '{$count1}' 
+				)"; 
+				$tsc_qry = $thisDB->query($tsc_sql);					
+				if ($tsc_qry -> num_rows == 0){
+				//Insert Tutor Subject ID information
+				$tutor_u_id_ts = $info_obj->id; //Tutor User Id using in Tutor Areas covered and tutor subjects
+				//var_dump($tutor_u_id_ts);
+				$ts_Sql = "INSERT IGNORE INTO ".DB_PREFIX."_tutor_subject SET
+							 trs_u_id  = '{$tutor_u_id_ts}',
+							 trs_tc_id = '{$course_id}',
+							 trs_ts_id = '{$subject_id}'										
+							 ";
+				$ts_Sql_exe = $thisDB->query($ts_Sql);                                        
+				}
+			Tuition_Course_End:				
             }
         }
 		$count1 = $count1+1;
