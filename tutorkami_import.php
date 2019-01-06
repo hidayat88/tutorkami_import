@@ -772,7 +772,7 @@ echo "User ID | Username | Role | Status | Exec Time  | <br />";
 			$check_jid_res = 1;
 		}
 
-		var_dump($check_jid_res);
+		//var_dump($check_jid_res);
 		
 		/*$current_jid = $check_jid_res;
 		if ($check_jid_res >= $current_jid){ //re apply exec to make sure data transfer cycle complete
