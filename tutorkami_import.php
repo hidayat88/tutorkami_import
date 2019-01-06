@@ -2,8 +2,11 @@
 <?php 
 require_once('config.php.inc');
 
-ini_set('max_execution_time', 60); //Add External PHP max exec timer in seconds. Set 0 for infinity timer.
+/*-------------------------------------------------------------------------------------------------------*/
+//Set your desire execution timer here.
+ini_set('max_execution_time', 20); //Add External PHP max exec timer in seconds. Set 0 for infinity timer.
 
+/*-------------------------------------------------------------------------------------------------------*/
 class db {
     var $conn;
 	var $count;
@@ -235,8 +238,7 @@ class db {
 									";
 						$j_exe = $thisDB->query($j_sqli);
 					}			
-			}
-			
+			}			
 			
 			// Job Translation migration
 			$jt_sql = "SELECT * FROM ".DB_PREFIX."_job_translation WHERE 
@@ -448,7 +450,7 @@ class db {
 						//Need to fix this
                        /* if (isset($data['tutor_course']) && count($data['tutor_course']) > 0) {
                             foreach ($data['tutor_course'] as $cid) {
-                                var_dump($cid);
+                                //var_dump($cid);
                                 if (isset($data['tutor_subject_'.$cid]) && count($data['tutor_subject_'.$cid]) > 0) {
                                     foreach ($data['tutor_subject_'.$cid] as $key => $pid) {
                                         $courseSql = "INSERT INTO ".DB_PREFIX."_tutor_subject SET
@@ -488,7 +490,7 @@ class db {
 }
 
 //Title Column
-echo "No | Username | Role | Status | Exec Time  | <br />";
+echo "User ID | Username | Role | Status | Exec Time  | <br />";
  function mig() {
 	$count = 0; //add count
 	$count1 = 0;
@@ -496,17 +498,49 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
 	//var_dump($thisInit);
     $thisDB = $thisInit->con_db();
 
-   $result = $thisInit->UltimateCurlSend('http://tutorkami.azurewebsites.net/api/tutorkami/GetMemberID');
-   $result_j = $thisInit->UltimateCurlSend('http://tutorkami.azurewebsites.net/api/tutorkami/GetJob');
+   $result = $thisInit->UltimateCurlSend('http://tutorkami.azurewebsites.net/api/tutorkami/GetMemberID'); //get member user id
+   $result_j = $thisInit->UltimateCurlSend('http://tutorkami.azurewebsites.net/api/tutorkami/GetJob'); //get job id
    
-    $r_decode = json_decode($result);		//Member ID decode using json listing
+    $r_id_decode = json_decode($result,true);		//Member ID decode using json listing
+	$max_r_decode = max($r_id_decode["data"]);
+	$max_uid = $max_r_decode["UserId"];				//Getting Max User ID
+	//var_dump($max_uid);
+	$r_decode = json_decode($result);		//Member ID decode using json listing
 	$r_decode_j = json_decode($result_j);		//Member ID decode using json listing
 	
-	//var_dump($jobmapping);
-    // echo "<pre>";
-
-    foreach ($r_decode->data as $key => $value) {
-
+	//Add for checking current database to check the max id number and starts with it. To continue import for sure.
+	$check_uid_sql 		= "SELECT max(u_id) as max_u_id FROM `tk_user`"; //Select the max number from new database
+	$check_uid_sql_exe 	= $thisDB->query($check_uid_sql);
+	$check_uid_ar_row	= $check_uid_sql_exe->fetch_array(MYSQLI_BOTH);
+	$check_uid_res = $check_uid_ar_row['max_u_id'];
+	
+	$uid_row_sql 	= "SELECT COUNT(*) as RowCount FROM `tk_user`";	//select total row count at new database
+	$uid_row_exe	= $thisDB->query($uid_row_sql);
+	$uid_row_count 	= $uid_row_exe->fetch_array(MYSQLI_BOTH);
+	
+	$uid_count_row = $uid_row_count['RowCount']; //Initialize
+	if ($uid_count_row > 1){
+			$uid_count_row = $uid_row_count['RowCount'];
+		}	// Use in customer, jobs jobs applied, continue same row to avoid data lost
+	else if ($uid_count_row <= 1){ //Nothing in DB
+			$uid_count_row = 1;
+		}
+	
+		//To compare current listed uid with new system uid
+		/*$current_uid = 1;
+		if ($check_uid_res >= $current_uid){ //re apply exec to make sure data transfer cycle complete
+			$current_uid = $check_uid_res;
+		}
+		else if ($check_uid_res < $current_uid OR empty($check_uid_res)){
+			$current_uid = 1;
+			//continue;
+		}*/
+		//var_dump($uid_count_row);
+		
+    foreach ( array_slice($r_decode->data,$uid_count_row) as $key => $value) { // User Id skip to latest user ID
+	//var_dump($value->UserId);
+		
+	
         $info_res = $thisInit->UltimateCurlSend('http://tutorkami.azurewebsites.net/api/tutorkami/GetMemberInfo?id='.$value->UserId);
         $i_decode = json_decode($info_res);
 		
@@ -722,18 +756,45 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
 			Tuition_Course_End:				
             }
         }
-		$count1 = $count1+1;
+		//$j_decode_arr = $r_decode_j->data[0];
+		//$data_jid = array($j_decode_arr);
+		//var_dump($data_jid);
+		//Add for checking current database to check the max id number and starts with it. To continue import for sure.
+		$check_jid_sql = "SELECT COUNT(*) as RowCount FROM `tk_user`";
+		$check_jid_sql_exe = $thisDB->query($check_jid_sql);
+		$check_jid_ar_row = $check_jid_sql_exe->fetch_array(MYSQLI_BOTH);
+		
+		$check_jid_res = $check_jid_ar_row['RowCount']; //initialize
+		if ($check_jid_res > 1){ //Got data 
+			$check_jid_res = $check_jid_ar_row['RowCount']-1;
+		}		
+		else if ($check_jid_res <= 1){ //Nothing in DB
+			$check_jid_res = 1;
+		}
+
+		var_dump($check_jid_res);
+		
+		/*$current_jid = $check_jid_res;
+		if ($check_jid_res >= $current_jid){ //re apply exec to make sure data transfer cycle complete
+			$current_jid = $check_jid_res+1;
+		}
+		else if ($check_jid_res < $current_jid OR empty($check_jid_res)){
+			$current_jid = 1;
+		}*/
+		//var_dump($check_jid_res);
+		
+		//$count1 = $count1+1;
 		// Add Job Migration
-		$jobmap = $thisInit->UltimateCurlSend('http://tutorkami.azurewebsites.net/api/tutorkami/GetJobInfo?id='.$count1); //Get Job list
+		$jobmap = $thisInit->UltimateCurlSend('http://tutorkami.azurewebsites.net/api/tutorkami/GetJobInfo?id='.$check_jid_res); //Get Job list
 		$j_decode = json_decode($jobmap);	//Job Mapping Decode using json listing		
 		$job_list = $j_decode->data[0];	//Store decoded Job list to array table
         $data = array($job_list);
 
-		$jobapplied = $thisInit->UltimateCurlSend('http://tutorkami.azurewebsites.net/api/tutorkami/GetCustomerJobMapping?id='.$count1); //Get Job Appliedlist
+		$jobapplied = $thisInit->UltimateCurlSend('http://tutorkami.azurewebsites.net/api/tutorkami/GetCustomerJobMapping?id='.$check_jid_res); //Get Job Appliedlist
 		$ja_decode = json_decode($jobapplied,true);	//Job Mapping Decode using json listing
 
 		$j_tutor_hiredID1 = $job_list->TutorHiredId;
-		$j_id1			 = $job_list->id;
+		$j_id1			 = $check_jid_res;
 		
 		// Job Applied migration
 		$ja_sql = "SELECT * FROM ".DB_PREFIX."_applied_job WHERE 
@@ -785,8 +846,7 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
 		$data['j_telephone']           		= $job_list->Phone; //Same as old system
 		$data['j_lesson']           		= $job_list->Lesson; //new system inside class table
 		$data['j_tutor_hiredID']           	= $job_list->TutorHiredId; //added to support job applied
-				
-		
+					
         // Collect data for only tutor with activated status 
 		if ($info_obj->Type == 'tutor' && $info_obj->TutorRegistrationStatus == 'Activated'){
 			$data['ud_client_status']      = ($info_obj->Type == 'tutor') ? 'Not Selected' : 'Parent' ;
@@ -796,6 +856,7 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
 		if ( $info_obj->Type == 'client'){	
 			$data['ud_client_status']       = ($info_obj->Type == 'client') ? 'Parent' : 'Not Selected' ;		
 		}
+		
 		$data['u_id']            		= $info_obj->id; //Use old DB ID to link Job later
         $data['u_username']             = $info_obj->Username;
         $data['u_email']                = $info_obj->Email;
@@ -889,20 +950,30 @@ echo "No | Username | Role | Status | Exec Time  | <br />";
 			
 			$count = $count + 1; //add count number
 			
-			 echo $count.")\n";
+			 echo $data['u_id'].")\n";
 			 echo $data['u_username']." | \n";
 			 echo $data['u_role']." | \n"; 
 			 echo $data['ud_client_status']." | \n"; 
              $executionTime = microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"];
-             echo $executionTime." | \n";
-			 echo "<br />\n";
+             echo $executionTime." |\n";
+			 //echo "<br />\n";
         }
+				
         try {
+			
         $thisInit->ImportData($data);
-	        } catch (Exception $e) {
-	 	   			echo 'Caught exception: ',  $e->getMessage(), "\n";
+		echo "| <i>Total Rows Executed: <strong>".$count." </strong></i>| ";
+		echo " <i>Total Rows Imported in DB: <strong>".$check_jid_res."</strong></i><br />";
+	    } 
+			
+		catch (Exception $e) {
+	 	   		//echo "Caught exception: ",  $e->getMessage(), "\n";				
 		}
+		
+		//Ends:
+		//next($check_uid_ar_row); //check next row value
 	}
+
 }
  mig();
 ?>
