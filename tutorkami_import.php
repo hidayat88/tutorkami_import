@@ -4,7 +4,7 @@ require_once('config.php.inc');
 
 /*-------------------------------------------------------------------------------------------------------*/
 //Set your desire execution timer here.
-ini_set('max_execution_time', 20); //Add External PHP max exec timer in seconds. Set 0 for infinity timer.
+ini_set('max_execution_time', 30); //Add External PHP max exec timer in seconds. Set 0 for infinity timer.
 
 /*-------------------------------------------------------------------------------------------------------*/
 class db {
@@ -373,6 +373,7 @@ class db {
                         ud_nationality  = '{$nationality}',
                         ud_admin_comment = '{$admin_comment}',
                         ud_client_status = '{$ud_client_status}',
+						ud_client_status_2 = '{$ud_client_status}',
                         ud_tutor_experience = '{$tutor_experience}',
                         ud_current_occupation = '{$occupation}',
                         ud_current_occupation_other = '{$occupationother}',
@@ -404,6 +405,7 @@ class db {
                         ud_nationality  = '{$nationality}',
                         ud_admin_comment = '{$admin_comment}',
                         ud_client_status = '{$ud_client_status}',
+						ud_client_status_2 = '{$ud_client_status}',
                         ud_tutor_experience = '{$tutor_experience}',
                         ud_current_occupation = '{$occupation}',
                         ud_current_occupation_other = '{$occupationother}',
