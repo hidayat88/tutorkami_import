@@ -1,8 +1,7 @@
 <?php 
 
 require_once('includes/head.php');
-//include('includes/headernonmobile.php');
-include('includes/header.php');
+
 
 
 $findCity = $stateID = $cityID = '';
@@ -41,7 +40,7 @@ if (count($_POST) > 0) {
 
   $output = system::FireCurl(SEACRH_TUTOR_URL, "POST", "JSON", $data);
 
-  // var_dump($output);
+ // var_dump($output);
 
   $search = $output->data;
 
@@ -95,11 +94,11 @@ if (count($_POST) > 0) {
 
 
 
-  // $output = system::FireCurl(SEACRH_TUTOR_URL, "POST", "JSON", $data);//punca slow view more tutor
+  //$output = system::FireCurl(SEACRH_TUTOR_URL, "POST", "JSON", $data);//punca slow view more tutor
 
-  // var_dump($output);exit();
+  //var_dump($output);exit();
 
-  // $search = $output->data;
+ // $search = $output->data;
 
 }
 
@@ -118,7 +117,11 @@ if (isset($subjectID) && $subjectID != '') {
 
 
 $total_result = count($search);
+//include('includes/headernonmobile.php');
+include('includes/header.php');
 
+//require_once('admin/classes/user.class.php');
+//$_SESSION['getPage'] = "Search Tutor";
 
 ?>
 
@@ -238,14 +241,14 @@ $total_result = count($search);
 
             $('#hider, #loadermodaldiv').hide();
       
-      <?php
+      <!--<?php
       
-        if(isset($_GET['location_id']))
-        {
-          echo "$(city_check_".$_GET['location_id'].").prop('checked', true);";
-        }
+       // if(isset($_GET['location_id']))
+        //{
+        //  echo "$(city_check_".$_GET['location_id'].").prop('checked', true);";
+       // }
         
-      ?>
+       //?> -->
 
          }
 
@@ -283,14 +286,14 @@ $total_result = count($search);
 
             $('#hider, #loadermodaldiv').hide();
       
-      <?php
+     <!-- <?php
       
-        if(isset($_GET['subject_id']))
+      /*  if(isset($_GET['subject_id']))
         {
           echo "$(subject_check".$_GET['subject_id'].").prop('checked', true);";
         }
-        
-      ?>
+        */
+     // ?> -->
 
          }
 
@@ -355,8 +358,7 @@ $total_result = count($search);
          <div class="col-md-offset-2 col-md-8">
 
           <div class="clearfix"></div>
-      
-      
+            
             <form method="post" id="filter_user">
 
                <input type="hidden" name="action" value="search_tutor">
@@ -453,7 +455,7 @@ $total_result = count($search);
 
                      <div class="form-group">
 
-                        <div class="showHide" <?php 
+                       <!-- <div class="showHide" --><?php /*
                           if(!isset($_GET['location_id']))
                           { 
                             echo "style='display: none;'"; 
@@ -461,8 +463,10 @@ $total_result = count($search);
                           else if($_GET['location_id'] == "")
                           { 
                             echo "style='display: none;'"; 
-                          } 
-                        ?>>
+                          } */
+                        ?> 
+						
+						 <div class="showHide" style="display: none;">
 
                            <div class="dropbox"><?php echo PLEASE_TICK_THE_AREA; ?></div>
 
@@ -707,7 +711,7 @@ array_multisort(array_column($getCourse->data, "sort_by"), SORT_ASC, $getCourse-
 
             </form>
       
-      <?php 
+      <?php /*
         $fromIndex = false;
         if(isset($_GET['location_id']))
         {
@@ -734,9 +738,9 @@ array_multisort(array_column($getCourse->data, "sort_by"), SORT_ASC, $getCourse-
         {
           echo "<script>window.onload = function () { cariTutor(); }</script>";
         }
-      ?>
+      */?>
 
-         </div>
+    </div>
 
          <div class="col-md-12">
 
@@ -746,7 +750,7 @@ array_multisort(array_column($getCourse->data, "sort_by"), SORT_ASC, $getCourse-
 
                 <div class="dataTables_info" id="example_info" role="status" aria-live="polite">
 
-                  <?php echo SEARCH_RESULTS; ?> : <span class="org-txt"><span id="counttutor"></span> Tutor(s) found</span>
+                 <!-- <?php echo SEARCH_RESULTS; ?> : <span class="org-txt"><span id="counttutor"></span> Tutor(s) found</span> -->
 
                   </div>
 
@@ -754,31 +758,77 @@ array_multisort(array_column($getCourse->data, "sort_by"), SORT_ASC, $getCourse-
 
              
 
-			   <table id="dataTable" class="display responsive nowrap" style="width:100%">
+				<table width="100%" border="0" cellspacing="0" cellpadding="0" class="table table-responsive text-center" style="background:#fff;" id="dataTable">
+
                   <thead>
 
                      <tr class="blue-bg">
 
-                        <th><?php echo SEARCH_TUTOR_NAME; ?></th>
+                        <td width="10%" align="Center"><?php echo SEARCH_TUTOR_NAME; ?></td>
 
-                        <th><?php echo SEARCH_TUTOR_GENDER; ?></th>
+                        <td width="8%" align="center"><?php echo SEARCH_TUTOR_GENDER; ?></td>
 
-                        <th><?php echo SEARCH_TUTOR_AGE; ?></th>
+                        <td width="5%" align="center"><?php echo SEARCH_TUTOR_AGE; ?></td>
 
-                        <th><?php echo SEARCH_TUTOR_RATING; ?></th>
+                      <!--  <th width="10%"><?php // echo SEARCH_TUTOR_RATING; ?></th>-->
 
-                        <th><?php echo SEARCH_TUTOR_CITY; ?></th>
+                        <td width="10%" align="center"><?php echo SEARCH_TUTOR_CITY; ?></td>
 
-                        <th><?php echo SEARCH_TUTOR_QUALIFICATION; ?></th>
+                        <td width="30%" align="center"><?php echo SEARCH_TUTOR_QUALIFICATION; ?></td>
 
-                        <th>TINDAKAN</th>
+                        <td width="15%" align="center">PROFILE</td>
 
                      </tr>
 
                   </thead>
+				  
+				 <!-- <tbody>
+
+                     <?php /*
+
+                     if(count($search) > 0) {
+
+                        foreach ($search as $key => $row) {                           
+
+                     ?>
+
+                     <tr class="point" onclick="gotoPage('tutor_profile?did=<?php echo $row->u_id;?>')" data-toggle="btnToolTip" data-placement="top" title="Please click to view tutor profile">
+
+                        <td><a><?php echo $row->name;?></a></td>
+
+                        <td><?php echo $row->gender;?></td>
+
+                        <td><?php echo $row->dob;?></td>
+
+                        <td><?php echo $row->rating;?></td>
+
+                        <td><?php echo $row->city_name;?></td>
+
+                        <td><?php echo $row->ud_qualification;?></td>
+
+
+                     </tr>
+
+                     <?php 
+
+                        }
+
+                     } else { 
+
+                     ?>
+
+                     <tr>
+
+                        <td colspan="7"><?php echo NO_RECORDS_FOUND; ?></td>
+
+                     </tr>
+
+                     <?php } */?>
+
+                  </tbody>-->
 
                </table>
-
+			   
                <br>
 
             </div>
@@ -792,6 +842,20 @@ array_multisort(array_column($getCourse->data, "sort_by"), SORT_ASC, $getCourse-
 </section>
 
 
+<script src="js/jquery-1.12.4.js"></script>
+
+<script src="js/jquery.dataTables.min.js"></script>
+
+<!--<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundation/6.4.3/css/foundation.min.css">
+--><link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/dataTables.foundation.min.css">   
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.foundation.min.css">  
+    
+    
+<!--<script src="https://code.jquery.com/jquery-3.3.1.js"></script>-->
+<script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.19/js/dataTables.foundation.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.2.3/js/responsive.foundation.min.js"></script>
 
 <script> 
 
@@ -819,7 +883,7 @@ array_multisort(array_column($getCourse->data, "sort_by"), SORT_ASC, $getCourse-
 
       } else {
 
-         $('[name^="'+id+'"]').parent('.col-md-12').hide();
+         $('[name^="'+id+'"]').parent('.col-md-12').show();
 
       }
 
@@ -881,7 +945,7 @@ array_multisort(array_column($getCourse->data, "sort_by"), SORT_ASC, $getCourse-
 
 <script>
     $(document).ready(function(){
-      cariTutor();
+     // cariTutor();
 
       $('#state_drop').on('change', function(){
 
@@ -1014,9 +1078,9 @@ array_multisort(array_column($getCourse->data, "sort_by"), SORT_ASC, $getCourse-
 
     // alert(gender + ',' + ud_race + ',' + current_occupation + ',' + ud_tutor_status + ',' + tution_center);
     // alert(subject_check);
-    if(areas == '' || course == ''){
+   /* if(areas == '' || course == ''){
       alert("Please select State and Levels!");
-    }else{
+    }else{*/
 
     if(gender != '' || ud_race != '' || current_occupation != '' || ud_tutor_status != '' || tution_center != '' || areas != '' || course != '' || subject_check != '' || city_check != ''){
       $.ajax({
@@ -1056,7 +1120,7 @@ array_multisort(array_column($getCourse->data, "sort_by"), SORT_ASC, $getCourse-
       });
 
     }
-  }
+ // }
     return false;
   }
 
@@ -1065,7 +1129,7 @@ array_multisort(array_column($getCourse->data, "sort_by"), SORT_ASC, $getCourse-
 
           $('#dataTable').DataTable({
 			responsive: false,
-            pageLength: 5,
+            pageLength: 10,
             language: {
                           "emptyTable":     "Tiada Maklumat Dijumpai!"
                         },			
@@ -1073,13 +1137,13 @@ array_multisort(array_column($getCourse->data, "sort_by"), SORT_ASC, $getCourse-
             searching: true,
             deferRender: true,
             destroy:true,//elakkan dari error initialise
-            columnDefs: [ {
+            //columnDefs: [ {
 
-            targets: [0, 1, 4, 5, 6], // column or columns numbers
+            //targets: [0, 1, 4, 5, 6], // column or columns numbers
 
-            orderable: false,  // set orderable for selected columns
+           // orderable: false,  // set orderable for selected columns
 
-            }],
+           // }],
             data : data,
             
             
@@ -1087,7 +1151,7 @@ array_multisort(array_column($getCourse->data, "sort_by"), SORT_ASC, $getCourse-
                         { "data": "u_displayname" },
                         { "data": "u_gender" },
                         { "data": "ud_dob" },
-                        { "data": "rr_rating" },
+                       // { "data": "rr_rating" },
                         { "data": "ud_city" },
                         { "data": "ud_qualification" },
                         { "data": "u_email",
@@ -1107,46 +1171,16 @@ array_multisort(array_column($getCourse->data, "sort_by"), SORT_ASC, $getCourse-
 </script>
 <!-- luqman -->
 
-
-
-
 <!--<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.bootstrap.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.1/css/bootstrap.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css">
-
-
-
-
-
-    
-    
-    
+  
 <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
 <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap4.min.js"></script>
-
 <script src="js/jquery-1.12.4.js"></script>
-
 <script src="js/jquery.dataTables.min.js"></script>
-
 <script src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>-->
-
-
-
-    
-    
-    
-	
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundation/6.4.3/css/foundation.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/dataTables.foundation.min.css">   
-<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.foundation.min.css">  
-    
-    
-<script src="https://code.jquery.com/jquery-3.3.1.js"></script>
-<script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.10.19/js/dataTables.foundation.min.js"></script>
-<script src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
-<script src="https://cdn.datatables.net/responsive/2.2.3/js/responsive.foundation.min.js"></script>
 
 <?php include('includes/footer.php');?>
 
