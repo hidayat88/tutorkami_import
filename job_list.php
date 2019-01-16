@@ -32,7 +32,7 @@ $ordering = (isset($_REQUEST['sort_by']) && $_REQUEST['sort_by'] != 0) ? 'asc' :
 
   <?php 
   $title = 'Job List | Tutorkami';
-  require_once('includes/html_head.php'); 
+ // require_once('includes/html_head.php'); 
   ?>
 
 </head>
@@ -209,7 +209,7 @@ $ordering = (isset($_REQUEST['sort_by']) && $_REQUEST['sort_by'] != 0) ? 'asc' :
         <div class="ibox-content"> 
          <div id="editable_wrapper" class="dataTables_wrapper form-inline dt-bootstrap no-footer">
 
-          <div class="row">
+         <div class="row">
            <div class="col-sm-12">
             <!-- <div class="table-responsive"> -->
             <div class="table-responsive">
@@ -265,18 +265,19 @@ $ordering = (isset($_REQUEST['sort_by']) && $_REQUEST['sort_by'] != 0) ? 'asc' :
                 </tbody>
 
               </table>
-              <!-- </div> -->
+              </div>
               </div>
             </div>
           </div>
         </div>
-
+	   </div>
       </div>
     </div>
   </div>
 </div>
 
 </div>  
+</body>
 <!-- end of wrapper-content part -->    
 
 
@@ -453,12 +454,12 @@ $ordering = (isset($_REQUEST['sort_by']) && $_REQUEST['sort_by'] != 0) ? 'asc' :
 
     </script>
 
-</div> 
+ <!--</div> 
 
-</div>
+</div>-->
 
 <!-- Mainly scripts -->
 
 
-</body>
+
 </html>
