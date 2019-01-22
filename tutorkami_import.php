@@ -122,6 +122,7 @@ class db {
 		$ud_client_status2	= isset($data['ud_client_status_2']) ? $this->RealEscape($data['ud_client_status_2']) : '';
 		$ud_proof_of_accepting_terms = isset($data['ud_proof_of_accepting_terms']) ? $this->RealEscape($data['ud_proof_of_accepting_terms']) : '';
 		$active				= isset($data['active']) ? $this->RealEscape($data['active']) : ''; //Add activation status
+		$ud_company_name	= isset($data['ud_company_name']) ? $this->RealEscape($data['ud_company_name']) : ''; //Add ud_company_name			
 		
 		//Add Job Import Data
 		$j_id				= isset($data['j_id']) ? $this->RealEscape($data['j_id']) : '';
@@ -169,26 +170,7 @@ class db {
 		$u_modified_date->setTimezone(new DateTimeZone('Asia/Kuala_Lumpur'));
 		$u_modified_date=$u_modified_date->format('Y-m-d H:i:s');
 		}Else{$u_modified_date = 'null';}
-		/*if (!empty($u_modified_date)){
-		$j_start_date = new DateTime($j_start_date, new DateTimeZone('UTC'));  //Created on date
-		$j_start_date->setTimezone(new DateTimeZone('Asia/Kuala_Lumpur'));
-		$j_start_date1=$j_start_date->format('Y-m-d H:i:s');
-		}Else{$j_start_date1 = '';}
-		if (!empty($j_end_date)){
-		$j_end_date = new DateTime($j_end_date, new DateTimeZone('UTC'));  //Created on date
-		$j_end_date->setTimezone(new DateTimeZone('Asia/Kuala_Lumpur'));
-		$j_end_date1=$j_end_date->format('Y-m-d H:i:s');
-		}Else{$j_end_date1 = '';}*/
-		/*if ($j_create_date!= 'null'){
-		//$j_create_date = new DateTime($j_create_date, new DateTimeZone('UTC'));  //Created on date
-		//$j_create_date->setTimezone(new DateTimeZone('Asia/Kuala_Lumpur'));
-		$j_create_date=$j_create_date->format('Y-m-d');
-		}Else{$j_create_date = 'null';}
-		if (!empty($j_deadline)){
-		$j_deadline = new DateTime($j_deadline, new DateTimeZone('UTC'));  //Created on date
-		$j_deadline->setTimezone(new DateTimeZone('Asia/Kuala_Lumpur'));
-		$j_deadline1=$j_deadline->format('Y-m-d H:i:s');
-		}Else{$j_create_date = '';}*/
+	
 		
 		//var_dump ($CreatedOnUtc);
 		// Job info migration
@@ -199,7 +181,7 @@ class db {
 		$j_qry = $thisDB->query($j_sql);
 	
 		//role to integer number only, use old DB user ID to make ease of other OLD DB table transfer
-		if ($j_qry->num_rows == 0) {
+	//if ($j_qry->num_rows == 0) {
 			
 			$j_sql_state = "SELECT * FROM ".DB_PREFIX."_states WHERE st_name = '{$j_state}'";
 			$j_qry_state = $thisDB->query($j_sql_state);		
@@ -209,7 +191,7 @@ class db {
 			
 			//Job Applied migrated for tutors who have been awarded for the job
 			if ($j_tutor_hiredID!=NULL){
-				$ja_sqli1 = "INSERT IGNORE INTO ".DB_PREFIX."_applied_job SET
+				$ja_sqli1 = "REPLACE INTO ".DB_PREFIX."_applied_job SET
 						aj_j_id = {$j_id},
 						aj_u_id = {$j_tutor_hiredID},
 						aj_status = 'A',
@@ -248,9 +230,9 @@ class db {
 					goto Check_validation; //Skip the process to Check_validation
 				}
 					//$count1 = $count1 + 1;
-					if ($j_id==$j_id ){ //To make sure only existed job id will be imported		
+					//if ($j_id==$j_id ){ //To make sure only existed job id will be imported		
 					//var_dump($j_level_Id);
-						$j_sqli = "INSERT IGNORE INTO ".DB_PREFIX."_job SET
+						$j_sqli = "REPLACE INTO ".DB_PREFIX."_job SET
 									j_id = '{$j_id}',
 									j_jl_id = '".$j_level_Id."',
 									j_email = '".$j_email."',
@@ -268,12 +250,18 @@ class db {
 									j_create_date = '".date('Y-m-d',strtotime($j_create_date))."',
 									j_telephone = '".$j_telephone."',
 									j_state_id = '{$j_st_id}',
-									j_country_id = '{$j_country_id}'
-									/*j_modified_date = '".date('Y-m-d H:i:s')."'*/
+									j_country_id = '{$j_country_id}',
+									j_modified_date = NULL
 									";
 						$j_exe = $thisDB->query($j_sqli);
-					}			
-			}			
+						$j_deadline_del = $thisDB->query("UPDATE ".DB_PREFIX."_job SET j_deadline = '' WHERE j_deadline like '%1970%'");
+						$j_start_date_del = $thisDB->query("UPDATE ".DB_PREFIX."_job SET j_start_date = '' WHERE j_start_date like '%1970%'");
+						$j_end_date_del = $thisDB->query("UPDATE ".DB_PREFIX."_job SET j_end_date = '' WHERE j_end_date like '%1970%'");
+						$j_deadline_del1 = $thisDB->query("UPDATE ".DB_PREFIX."_job SET j_deadline = '' WHERE j_deadline like '%0000%'");
+						$j_start_date_del1 = $thisDB->query("UPDATE ".DB_PREFIX."_job SET j_start_date = '' WHERE j_start_date like '%0000%'");
+						$j_end_date_del1 = $thisDB->query("UPDATE ".DB_PREFIX."_job SET j_end_date = '' WHERE j_end_date like '%0000%'");
+					//}			
+		//}			
 			//var_dump(date('Y-m-d',strtotime($j_create_date)));
 			// Job Translation migration
 			$jt_sql = "SELECT * FROM ".DB_PREFIX."_job_translation WHERE 
@@ -283,9 +271,9 @@ class db {
 	  
 			$jt_qry = $thisDB->query($jt_sql);
 			
-			if ($jt_qry->num_rows == 0) {
+			//if ($jt_qry->num_rows == 0) {
 				//Add English Translation
-				$jt_sqli_en = "INSERT IGNORE INTO ".DB_PREFIX."_job_translation SET
+				$jt_sqli_en = "REPLACE INTO ".DB_PREFIX."_job_translation SET
 					jt_j_id = '{$j_id}',
 					jt_lang_code = 'en',
 					jt_subject = '".$j_subject."',
@@ -295,7 +283,7 @@ class db {
 				";
 				$jt_exe_en = $thisDB->query($jt_sqli_en);
 				//Add Malay Translation
-				$jt_sqli_ms = "INSERT IGNORE INTO ".DB_PREFIX."_job_translation SET
+				$jt_sqli_ms = "REPLACE INTO ".DB_PREFIX."_job_translation SET
 					jt_j_id = '{$j_id}',
 					jt_lang_code = 'ms',
 					jt_subject = '".$j_subject."',
@@ -304,9 +292,34 @@ class db {
 					jt_comments = '".$j_comment."'
 				";
 				$jt_exe_ms = $thisDB->query($jt_sqli_ms);
-			}
-
+			//}
+	
 		Check_validation:
+		
+		// Convert city name ->city id->state id->state name
+		$ud_link_sql = 	"SELECT * FROM `tk_cities` 
+						INNER JOIN tk_states ON tk_states.st_id = tk_cities.city_st_id
+						WHERE tk_cities.city_name LIKE '%".$udcity."%'
+						";
+		$ud_link_qry 		= $thisDB->query($ud_link_sql);		
+		$ud_link_ar_row 	= $ud_link_qry->fetch_array(MYSQLI_BOTH);
+		$ud_state_id 	 	= $ud_link_ar_row['st_id'];
+
+		$udid_max_exe 	= $thisDB->query("SELECT MAX(ud_id) as Max_ud_id FROM ".DB_PREFIX."_user_details");	//select total row count at tk_user
+		$udid_max_count = $udid_max_exe->fetch_array(MYSQLI_BOTH);
+		$udid_max 		= $udid_max_count['Max_ud_id'];
+		
+		$uid_max_exe 	= $thisDB->query("SELECT MAX(u_id) as Max_u_id FROM ".DB_PREFIX."_user");	//select total row count at tk_user
+		$uid_max_count = $uid_max_exe->fetch_array(MYSQLI_BOTH);
+		$uid_max 		= $uid_max_count['Max_u_id'];
+		
+		$uid_row_exe1 	= $thisDB->query("SELECT COUNT(*) as RowCount FROM ".DB_PREFIX."_user");	//select total row count at tk_user
+		$uid_row_count1 = $uid_row_exe1->fetch_array(MYSQLI_BOTH);
+		$uid_count_row1 = $uid_row_count1['RowCount'];
+		
+		
+		if ($udid_max == NULL) { $udid_max = 0;}
+		//var_dump($uid_count_row1);
         // Validation for user information
         if ($username == '') {
             $res = array('flag' => 'error', 'message' => 'Username is required.');
@@ -330,19 +343,19 @@ class db {
             $res = array('flag' => 'error', 'message' => 'Area you can cover is required.');
         }*/ else {
             // Check for Duplicate 
-            $sql = "SELECT * FROM ".DB_PREFIX."_user WHERE 
+            /*$sql = "SELECT * FROM ".DB_PREFIX."_user  WHERE 
             u_status <> 'D' AND (
                 u_email = '{$email}' || 
                 u_username = '{$email}' || 
                 u_email = '{$username}' || 
                 u_username = '{$username}'
-			)"; 
-            
-
+			)";*/ 
+            $sql = "SELECT * FROM ".DB_PREFIX."_user";
             $qry = $thisDB->query($sql);
-            
+			
 			//role to integer number only, use old DB user ID to make ease of other OLD DB table transfer
-            if ($qry->num_rows == 0) {
+           // if ($qry->num_rows == 0 ) {
+				
 				if (strpos($email, 'banned') !== false) { // it is true, got banned word
 					$u_status = 'B';
 				}
@@ -352,97 +365,178 @@ class db {
 				else if($active == '1' and strpos($email, 'banned') !== true)  { 
 					$u_status = 'A';
 				}
+				//else if ($uid_max == $u_id){
 				//var_dump ($u_status);
-                $sqli = "INSERT IGNORE INTO ".DB_PREFIX."_user SET
+                $sqli = "REPLACE INTO ".DB_PREFIX."_user SET
 					u_id = '{$u_id}',
-                    u_email = '".$email."',
-                    u_username = '".$username."',
+					u_username = '".$username."',
+					u_password = '".$password."', 
+					u_role  = '{$role}',
+                    u_email = '".$email."',                   
                     u_displayname = '".$displayname."',
                     u_displayid = '".$displayid."',
                     u_gender = '".$gender."',
                     u_profile_pic = '".$profile_pic."',
+					u_oauth_provider = '0',
+					u_app_token = 'null',
+					u_social_id = '0',
                     u_status = '".$u_status."',
-                    u_password = '".$password."',                 
+                    u_paying_client = 'null',  
+					u_admin_approve ='2', 
                     u_create_date = '".date('Y-m-d H:i:s',strtotime($CreatedOnUtc))."',
-                    u_role  = '{$role}', 
+                    u_modified_date = '".date('Y-m-d H:i:s',strtotime($u_modified_date))."', 
                     u_country_id  = '{$country_id}',
 					ip_address = '".$LastIpAddress."',
-					last_page = 'Old DB',
-					u_admin_approve ='2', #Admin approve as 2
-					u_modified_date = '".date('Y-m-d H:i:s',strtotime($u_modified_date))."'
+					last_page = 'Old DB'				
 				";					
                 $exe = $thisDB->query($sqli);  	
 				$u_displayname_del = $thisDB->query("UPDATE ".DB_PREFIX."_user SET u_displayname = '' WHERE u_displayname = 'null'");
 				$u_profile_pic_del = $thisDB->query("UPDATE ".DB_PREFIX."_user SET u_profile_pic = '' WHERE u_profile_pic = 'null'");
-				//$last_page_del = $thisDB->query("UPDATE ".DB_PREFIX."_user SET last_page = '' WHERE last_page = 'null'");				
-                if ($exe){} else { echo $thisDB->error."<br>"; }
+				$u_app_token_del = $thisDB->query("UPDATE ".DB_PREFIX."_user SET u_app_token = '' WHERE u_app_token = 'null'");		
+				$u_oauth_provider_del = $thisDB->query("UPDATE ".DB_PREFIX."_user SET u_oauth_provider = '' WHERE u_oauth_provider = '0'");
+				$u_social_id_del = $thisDB->query("UPDATE ".DB_PREFIX."_user SET u_social_id = '' WHERE u_social_id = '0'");
+				$u_paying_client_del = $thisDB->query("UPDATE ".DB_PREFIX."_user SET u_paying_client = '' WHERE u_paying_client = 'null'");
+                //if ($exe){} else { echo $thisDB->error."<br>"; }
 				
-				
-                //Tutors Testimonial migration
-				if ($ut_user_testimonial1 !='null' or $ut_user_testimonial1 !='0'){ //To make sure the 1st testimonial must be filled in, if not skip
-                $t_sqli = "INSERT IGNORE INTO ".DB_PREFIX."_user_testimonial SET
-				ut_u_id = '{$u_id}',
-				ut_user_testimonial1 = 'images/testimonial/testimonial_{$ut_user_testimonial1}.jpg',
-				ut_user_testimonial2 = 'images/testimonial/testimonial_{$ut_user_testimonial2}.jpg',
-				ut_user_testimonial3 = 'images/testimonial/testimonial_{$ut_user_testimonial3}.jpg',
-				ut_user_testimonial4 = 'images/testimonial/testimonial_{$ut_user_testimonial4}.jpg',
-				ut_create_date = '".date('Y-m-d H:i:s')."'
-				";
-				$t_exe = $thisDB->query($t_sqli);
-				$ut_user_testimonial1_del = $thisDB->query("UPDATE ".DB_PREFIX."_user_testimonial SET ut_user_testimonial1 = '' WHERE ut_user_testimonial1 like '%null%'");
-				$ut_user_testimonial2_del = $thisDB->query("UPDATE ".DB_PREFIX."_user_testimonial SET ut_user_testimonial2 = '' WHERE ut_user_testimonial2 like '%null%'");
-				$ut_user_testimonial3_del = $thisDB->query("UPDATE ".DB_PREFIX."_user_testimonial SET ut_user_testimonial3 = '' WHERE ut_user_testimonial3 like '%null%'");
-				$ut_user_testimonial4_del = $thisDB->query("UPDATE ".DB_PREFIX."_user_testimonial SET ut_user_testimonial4 = '' WHERE ut_user_testimonial4 like '%null%'");
-				}
-				
-				
-				
-				// Convert city name ->city id->state id->state name
-				$ud_link_sql = 	"SELECT * FROM `tk_cities` 
-								INNER JOIN tk_states ON tk_states.st_id = tk_cities.city_st_id
-								WHERE tk_cities.city_name LIKE '%".$udcity."%'
-								";
-				$ud_link_qry 		= $thisDB->query($ud_link_sql);		
-				$ud_link_ar_row 	= $ud_link_qry->fetch_array(MYSQLI_BOTH);
-				$ud_state_id 	 	= $ud_link_ar_row['st_id'];
-				//var_dump($ud_state_id);
-				
-				
-                if($exe) {
-                    $insert_iud = $thisDB->insert_id;
+				//if ($exe){//($uid_count_row1 >= $udid_max) {           	//tk_user row count less or equal to max ud_id  
+					$tk_ud_row = $uid_count_row1 + 1;
+						
 					if ($ud_proof_of_accepting_terms!='null'){	//proof not null
 						$ud_proof_of_accepting_terms= "images/proof/proof_000".$ud_proof_of_accepting_terms.".jpg";
 					}
 					else if ($ud_proof_of_accepting_terms=='null'){	//proof is null
 						$ud_proof_of_accepting_terms= 'null';
 					}
-					var_dump($ud_proof_of_accepting_terms);
-                    $sq = "INSERT IGNORE INTO ".DB_PREFIX."_user_details SET
+					else if ($firstname==''){
+						$firstname = 'null';
+					}
+					else if ($lastname==''){
+						$lastname = 'null';
+					}
+					else if ($ud_dob==''){
+						$ud_dob = 'null';
+					}
+					else if ($address==''){
+						$address = 'null';
+					}
+					else if ($address2==''){
+						$address2 = 'null';
+					}
+					else if ($ud_state_id==''){
+						$ud_state_id = 'null';
+					}
+					else if ($phonenum==''){
+						$phonenum = 'null';
+					}
+					else if ($ud_company_name==''){
+						$ud_company_name = 'null';
+					}
+					else if ($race==''){
+						$race = 'null';
+					}
+					else if ($marital_status==''){
+						$marital_status = 'null';
+					}
+					else if ($nationality==''){
+						$nationality = 'null';
+					}
+					else if ($admin_comment==''){
+						$admin_comment = 'null';
+					}
+					else if ($ud_client_status==''){
+						$ud_client_status = 'null';
+					}
+					else if ($ud_client_status2==''){
+						$ud_client_status2 = 'null';
+					}
+					else if ($tutor_status==''){
+						$tutor_status = 'null';
+					}
+					else if ($occupation==''){
+						$occupation = 'null';
+					}
+					else if ($occupationother==''){
+						$occupationother = 'null';
+					}
+					else if ($company_name==''){
+						$company_name = 'null';
+					}
+					else if ($tutor_experience==''){
+						$tutor_experience = 'null';
+					}
+					else if ($about_yourself==''){
+						$about_yourself = 'null';
+					}
+					else if ($qualification==''){
+						$qualification = 'null';
+					}
+					
+					//if ($tk_ud_row==$udid_max){ //Update the max row 1st
+						$del_udid_max=$thisDB->query(
+						"UPDATE ".DB_PREFIX."_user_details SET
+						#ud_id			= '{$tk_ud_row}',
                         ud_u_id         = '{$u_id}',
                         ud_first_name   = '{$firstname}',
                         ud_last_name    = '{$lastname}',
-                        ud_dob          = '{$ud_dob}',
-                        ud_phone_number = '{$phonenum}',
+                        ud_dob          = '{$ud_dob}',                      
                         ud_address      = '{$address}',
                         ud_address2     = '{$address2}',
-                        ud_country      = '{$udcountry}',
-                        ud_state        = '{$ud_state_id}',
-                        ud_city         = '{$udcity}',
-                        ud_postal_code  = '{$postalco}',
-                        ud_current_company = '{$company_name}',
+						ud_city         = '{$udcity}',
+						ud_state        = '{$ud_state_id}',
+                        ud_country      = '{$udcountry}',                       
+                        ud_postal_code  = 'null',
+						ud_phone_number = '{$phonenum}',
+						ud_company_name = '{$ud_company_name}',
                         ud_race         = '{$race}',
                         ud_marital_status  = '{$marital_status}',
                         ud_nationality  = '{$nationality}',
                         ud_admin_comment = '{$admin_comment}',
                         ud_client_status = '{$ud_client_status}',
 						ud_client_status_2 = '{$ud_client_status2}',
+						ud_tutor_status = '{$tutor_status}',
+						ud_current_occupation = '".ucwords($occupation, "-")."',
+                        ud_current_occupation_other = '".ucwords($occupationother, "-")."',
+						ud_current_company = '{$company_name}',						
                         ud_tutor_experience = '{$tutor_experience}',
-                        ud_current_occupation = '".ucwords($occupation)."',
-                        ud_current_occupation_other = '".ucwords($occupationother)."',
                         ud_about_yourself = '{$about_yourself}',
+						ud_rate_per_hour = 'null',
                         ud_qualification = '{$qualification}',
-                        ud_tutor_status = '{$tutor_status}',
-						ud_proof_of_accepting_terms = '{$ud_proof_of_accepting_terms}'
+						ud_proof_of_accepting_terms = '{$ud_proof_of_accepting_terms}',
+						student_disability = 'null'
+						WHERE ud_u_id = '".$u_id."'	
+						");
+					//}
+					//var_dump($ud_proof_of_accepting_terms); Then update the current row
+                    $sq = "REPLACE INTO ".DB_PREFIX."_user_details SET
+						ud_id			= '{$tk_ud_row}',
+                        ud_u_id         = '{$u_id}',
+                        ud_first_name   = '{$firstname}',
+                        ud_last_name    = '{$lastname}',
+                        ud_dob          = '{$ud_dob}',                      
+                        ud_address      = '{$address}',
+                        ud_address2     = '{$address2}',
+						ud_city         = '{$udcity}',
+						ud_state        = '{$ud_state_id}',
+                        ud_country      = '{$udcountry}',                       
+                        ud_postal_code  = 'null',
+						ud_phone_number = '{$phonenum}',
+						ud_company_name = '{$ud_company_name}',
+                        ud_race         = '{$race}',
+                        ud_marital_status  = '{$marital_status}',
+                        ud_nationality  = '{$nationality}',
+                        ud_admin_comment = '{$admin_comment}',
+                        ud_client_status = '{$ud_client_status}',
+						ud_client_status_2 = '{$ud_client_status2}',
+						ud_tutor_status = '{$tutor_status}',
+						ud_current_occupation = '".ucwords($occupation, "-")."',
+                        ud_current_occupation_other = '".ucwords($occupationother, "-")."',
+						ud_current_company = '{$company_name}',						
+                        ud_tutor_experience = '{$tutor_experience}',
+                        ud_about_yourself = '{$about_yourself}',
+						ud_rate_per_hour = 'null',
+                        ud_qualification = '{$qualification}',
+						ud_proof_of_accepting_terms = '{$ud_proof_of_accepting_terms}',
+						student_disability = 'null'
 						";
 						//Modified proof accpeting terms to new system file directory, just copy old images and put into files folder
 						$exe = $thisDB->query($sq);
@@ -459,20 +553,59 @@ class db {
 						$ud_about_yourself_del = $thisDB->query("UPDATE ".DB_PREFIX."_user_details SET ud_about_yourself = '' WHERE ud_about_yourself = 'null'");
 						$ud_qualification_del = $thisDB->query("UPDATE ".DB_PREFIX."_user_details SET ud_qualification = '' WHERE ud_qualification = 'null'");
 						$ud_proof_of_accepting_terms_del = $thisDB->query("UPDATE ".DB_PREFIX."_user_details SET ud_proof_of_accepting_terms = '' WHERE ud_proof_of_accepting_terms = 'null'");
+						$ud_race_del = $thisDB->query("UPDATE ".DB_PREFIX."_user_details SET ud_race = '' WHERE ud_race = 'null'");
+						$ud_postal_code_del = $thisDB->query("UPDATE ".DB_PREFIX."_user_details SET ud_postal_code = '' WHERE ud_postal_code = 'null'");
+						$ud_rate_per_hour_del = $thisDB->query("UPDATE ".DB_PREFIX."_user_details SET ud_rate_per_hour = '' WHERE ud_rate_per_hour = 'null'");
+						$student_disability_del = $thisDB->query("UPDATE ".DB_PREFIX."_user_details SET student_disability = '' WHERE student_disability = 'null'");
+						$ud_company_name_del = $thisDB->query("UPDATE ".DB_PREFIX."_user_details SET ud_company_name = '' WHERE ud_company_name = 'null'");
+				//}			
+
+								
+				//Tutors Testimonial migration
+				if ($ut_user_testimonial1 !='null' or $ut_user_testimonial1 !=0){ //To make sure the 1st testimonial must be filled in, if not skip
+					$t_sqli = "REPLACE INTO ".DB_PREFIX."_user_testimonial SET
+					ut_u_id = '{$u_id}',
+					ut_user_testimonial1 = 'images/testimonial/testimonial_{$ut_user_testimonial1}.jpg',
+					ut_user_testimonial2 = 'images/testimonial/testimonial_{$ut_user_testimonial2}.jpg',
+					ut_user_testimonial3 = 'images/testimonial/testimonial_{$ut_user_testimonial3}.jpg',
+					ut_user_testimonial4 = 'images/testimonial/testimonial_{$ut_user_testimonial4}.jpg',
+					ut_create_date = '".date('Y-m-d H:i:s')."'
+					";
+					$t_exe = $thisDB->query($t_sqli);
+					$ut_user_testimonial1_del = $thisDB->query("UPDATE ".DB_PREFIX."_user_testimonial SET ut_user_testimonial1 = '' WHERE ut_user_testimonial1 like '%null%'");
+					$ut_user_testimonial2_del = $thisDB->query("UPDATE ".DB_PREFIX."_user_testimonial SET ut_user_testimonial2 = '' WHERE ut_user_testimonial2 like '%null%'");
+					$ut_user_testimonial3_del = $thisDB->query("UPDATE ".DB_PREFIX."_user_testimonial SET ut_user_testimonial3 = '' WHERE ut_user_testimonial3 like '%null%'");
+					$ut_user_testimonial4_del = $thisDB->query("UPDATE ".DB_PREFIX."_user_testimonial SET ut_user_testimonial4 = '' WHERE ut_user_testimonial4 like '%null%'");
 				}
+			} // else close
+
+		//}
+
+
+
+				
+				
+                /*if($uid_count_row1 > $udid_max AND $uid_count_row1 != $udid_max OR $udid_max == 0){
+					$delete_tk_user_det = $thisDB->query("DELETE FROM ".DB_PREFIX."_user WHERE u_id >'".$udid_max."'"); //delete tk_user_details table exceed the tk_user
+					//$delete_tk_job = $thisDB->query("DELETE FROM ".DB_PREFIX."_job WHERE j_id >'".$udid_max."'"); //delete tk_user table exceed the tk_user_details
+					}
+				else if($uid_count_row1 < $udid_max OR $uid_count_row1 == 0) { 	//To delete respective row and restart the sequence back.				
+					$delete_tk_user = $thisDB->query("DELETE FROM ".DB_PREFIX."_user_details WHERE ud_u_id >'".$uid_max ."'"); //delete tk_user table exceed the tk_user_details		
+					}*/
+
 					
-			} /*else {
-                $res = array('flag' => 'error', 'message' => 'Database error: '.$thisDB->error);
-            }
-            } else {
-                $res = array('flag' => 'error', 'message' => 'Email already exists in our record.');
-            */
-		}
+					/*else {
+						$res = array('flag' => 'error', 'message' => 'Database error: '.$thisDB->error);
+						}
+						} else {
+						$res = array('flag' => 'error', 'message' => 'Email already exists in our record.');
+					*/
+	
         
 		
         // return $res;
-    }
-}
+    } // function ImportData($data)
+} //Class db close
 
 //Title Column
 echo "User ID | Username | Role | Status | Exec Time  | <br />";
@@ -503,7 +636,7 @@ echo "User ID | Username | Role | Status | Exec Time  | <br />";
 	$uid_count_row1 = $uid_row_count1['RowCount']; //Initialize
 	
 	if ($uid_count_row1 > 1){
-			$uid_count_row1 = $uid_row_count1['RowCount']; //Minus 1 due to array_slice if needed
+			$uid_count_row1 = $uid_row_count1['RowCount']-1; //Minus 1 due to array_slice if needed
 		}	// Use in courses and subjects, continue same row to avoid data lost
 	else if ($uid_count_row1 <= 1){ //Nothing in DB
 			$uid_count_row1 = 0;
@@ -579,7 +712,7 @@ echo "User ID | Username | Role | Status | Exec Time  | <br />";
 				$sel_sub_rows = $sel_sub_qry->fetch_array(MYSQLI_ASSOC	);
 				$sel_sub_id = $sel_sub_rows['tc_id'];
 
-				$tui_sub_sql = "INSERT IGNORE INTO ".DB_PREFIX."_tution_subject SET
+				$tui_sub_sql = "REPLACE INTO ".DB_PREFIX."_tution_subject SET
 								ts_id			= '{$counting}',
 								ts_tc_id    	= '{$sel_sub_id}',
 								ts_title	   	= '{$subjects_name}',
@@ -698,7 +831,7 @@ echo "User ID | Username | Role | Status | Exec Time  | <br />";
 						$city_id = $ars_row['city_id'];
 					} else {
 					  
-						$thisDB->query("INSERT IGNORE INTO ".DB_PREFIX."_cities SET city_name = '".$city_name."', city_st_id = '".$state_id."', city_status = '1'");
+						$thisDB->query("REPLACE INTO ".DB_PREFIX."_cities SET city_name = '".$city_name."', city_st_id = '".$state_id."', city_status = '1'");
 						$city_id = $thisDB->insert_id;
 					   // echo $thisDB->error;
 					}
@@ -710,7 +843,7 @@ echo "User ID | Username | Role | Status | Exec Time  | <br />";
 
 					if ($tac_qry -> num_rows == 0){
 					
-					$areaSql = "INSERT IGNORE INTO ".DB_PREFIX."_tutor_area_cover SET
+					$areaSql = "REPLACE INTO ".DB_PREFIX."_tutor_area_cover SET
 											 tac_u_id    = '{$tutor_u_id_ta}',
 											 tac_st_id   = '{$state_id}',
 											 tac_city_id = '{$city_id}'";
@@ -841,7 +974,7 @@ echo "User ID | Username | Role | Status | Exec Time  | <br />";
 								 goto skip_course; //Skip the no listed course
 							 }else {
 								//var_dump($tutor_u_id_ts);
-								$ts_Sql = "INSERT IGNORE INTO ".DB_PREFIX."_tutor_subject SET
+								$ts_Sql = "REPLACE INTO ".DB_PREFIX."_tutor_subject SET
 											 trs_u_id  = '{$tutor_u_id_ts}',
 											 trs_tc_id = '{$course_id}',
 											 trs_ts_id = '{$subject_id}'										
@@ -866,7 +999,7 @@ echo "User ID | Username | Role | Status | Exec Time  | <br />";
 		
 		$check_jid_res = $check_jid_ar_row['RowCount']; //initialize
 		if ($check_jid_res > 1){ //Got data 
-			$check_jid_res = $check_jid_ar_row['RowCount'];
+			$check_jid_res = $check_jid_ar_row['RowCount']-1;
 		}		
 		else if ($check_jid_res <= 1){ //Nothing in DB
 			$check_jid_res = 1;
@@ -914,7 +1047,7 @@ echo "User ID | Username | Role | Status | Exec Time  | <br />";
 							
 						if ($ja_qry->num_rows == 0) {			
 							//if ($ja_id == $j_id1){ //To import to applied job table
-							$ja_sqli = "INSERT IGNORE INTO ".DB_PREFIX."_applied_job SET
+							$ja_sqli = "REPLACE INTO ".DB_PREFIX."_applied_job SET
 									aj_j_id = {$ja_id},
 									aj_u_id = {$ja_customer_id},
 									aj_status = 'P',
@@ -1011,7 +1144,8 @@ echo "User ID | Username | Role | Status | Exec Time  | <br />";
 		$data['ut_user_testimonial3']   = $info_obj->Testimonial3Id;	//Add Testimonial 3
 		$data['ut_user_testimonial4']   = $info_obj->Testimonial4Id;	//Add Testimonial 4
 		$data['ud_proof_of_accepting_terms']   = $info_obj->IdentityProofPictureId; //Add identity proof of accepting terms
-		$data['active']   = $info_obj->Active; //Add active status
+		$data['active']   				= $info_obj->Active; //Add active status
+		$data['tution_center'] 			= $info_obj->ConsiderTuitionCentre; //Add missing tuition center status
 		
 		
 	//The ID at 1st column is fixed to takeoff the redundant and re-add of the rows. The migration is manually assigned
