@@ -230,7 +230,7 @@ class db {
 					goto Check_validation; //Skip the process to Check_validation
 				}
 					//$count1 = $count1 + 1;
-					//if ($j_id==$j_id ){ //To make sure only existed job id will be imported		
+					if ($j_id==$j_id ){ //To make sure only existed job id will be imported		
 					//var_dump($j_level_Id);
 						$j_sqli = "REPLACE INTO ".DB_PREFIX."_job SET
 									j_id = '{$j_id}',
@@ -257,10 +257,10 @@ class db {
 						$j_deadline_del = $thisDB->query("UPDATE ".DB_PREFIX."_job SET j_deadline = '' WHERE j_deadline like '%1970%'");
 						$j_start_date_del = $thisDB->query("UPDATE ".DB_PREFIX."_job SET j_start_date = '' WHERE j_start_date like '%1970%'");
 						$j_end_date_del = $thisDB->query("UPDATE ".DB_PREFIX."_job SET j_end_date = '' WHERE j_end_date like '%1970%'");
-						$j_deadline_del1 = $thisDB->query("UPDATE ".DB_PREFIX."_job SET j_deadline = '' WHERE j_deadline like '%0000%'");
-						$j_start_date_del1 = $thisDB->query("UPDATE ".DB_PREFIX."_job SET j_start_date = '' WHERE j_start_date like '%0000%'");
-						$j_end_date_del1 = $thisDB->query("UPDATE ".DB_PREFIX."_job SET j_end_date = '' WHERE j_end_date like '%0000%'");
-					//}			
+						$j_deadline_del1 = $thisDB->query("UPDATE ".DB_PREFIX."_job SET j_deadline = NULL WHERE j_deadline like '%0000%'");
+						$j_start_date_del1 = $thisDB->query("UPDATE ".DB_PREFIX."_job SET j_start_date = NULL WHERE j_start_date like '%0000%'");
+						$j_end_date_del1 = $thisDB->query("UPDATE ".DB_PREFIX."_job SET j_end_date = NULL WHERE j_end_date like '%0000%'");
+					}			
 		//}			
 			//var_dump(date('Y-m-d',strtotime($j_create_date)));
 			// Job Translation migration
@@ -377,9 +377,9 @@ class db {
                     u_displayid = '".$displayid."',
                     u_gender = '".$gender."',
                     u_profile_pic = '".$profile_pic."',
-					u_oauth_provider = '0',
-					u_app_token = 'null',
-					u_social_id = '0',
+					#u_oauth_provider = '0',
+					#u_app_token = 'null',
+					#u_social_id = '0',
                     u_status = '".$u_status."',
                     u_paying_client = 'null',  
 					u_admin_approve ='2', 
@@ -446,9 +446,6 @@ class db {
 					else if ($ud_client_status==''){
 						$ud_client_status = 'null';
 					}
-					else if ($ud_client_status2==''){
-						$ud_client_status2 = 'null';
-					}
 					else if ($tutor_status==''){
 						$tutor_status = 'null';
 					}
@@ -470,6 +467,29 @@ class db {
 					else if ($qualification==''){
 						$qualification = 'null';
 					}
+					else {
+					}
+					if ($ud_client_status2=='' OR $ud_client_status2=='null'){
+						$ud_client_status2 = 'null';
+					}
+					else if ($ud_client_status2=='Parent'){
+						$ud_client_status2 = 'Parent';
+					}
+					else if ($ud_client_status2=='Student'){
+						$ud_client_status2 = 'Student';
+					}
+					else if ($ud_client_status2=='TuitionCentre'){
+						$ud_client_status2 = 'Tuition Centre';
+					}	 
+					else if ($ud_client_status2=='Agent'){
+						$ud_client_status2 = 'Agent';
+					}
+					else if ($ud_client_status2=='NotSelected'){
+						$ud_client_status2 = 'Not Selected';
+					}
+					else{
+					}
+					
 					
 					//if ($tk_ud_row==$udid_max){ //Update the max row 1st
 						$del_udid_max=$thisDB->query(
@@ -558,6 +578,7 @@ class db {
 						$ud_rate_per_hour_del = $thisDB->query("UPDATE ".DB_PREFIX."_user_details SET ud_rate_per_hour = '' WHERE ud_rate_per_hour = 'null'");
 						$student_disability_del = $thisDB->query("UPDATE ".DB_PREFIX."_user_details SET student_disability = '' WHERE student_disability = 'null'");
 						$ud_company_name_del = $thisDB->query("UPDATE ".DB_PREFIX."_user_details SET ud_company_name = '' WHERE ud_company_name = 'null'");
+						$ud_client_status_2_del = $thisDB->query("UPDATE ".DB_PREFIX."_user_details SET ud_client_status_2 = 'Not Selected' WHERE ud_client_status_2 = 'null'");
 				//}			
 
 								
@@ -1088,14 +1109,18 @@ echo "User ID | Username | Role | Status | Exec Time  | <br />";
 					
 		// Collect data for only tutor with activated status 
 		if ($info_obj->Type == 'tutor' && $info_obj->TutorRegistrationStatus == 'Activated'){
-			$data['ud_client_status_2']      = ($info_obj->Type == 'tutor') ? 'Not Selected' : 'Parent' ;
+			$data['ud_client_status']        = ($info_obj->ConsiderTuitionCentre == 1) ? '1' : '0' ;
+			$data['ud_client_status_2']      = $info_obj->ClientStatus; 											//($info_obj->ConsiderTuitionCentre == 1) ? 'Tuition Center' : 'Not Selected' ; //$info_obj->ConsiderTuitionCentre;
+			$data['ud_address']              = $info_obj->StreetAddress;
 			$data['ud_address2']             = $info_obj->StreetAddress;	//Address2 for tutor
 		} //end if tutor status
 		
 		// Collect data for only client 
 		if ( $info_obj->Type == 'client'){	
-			$data['ud_client_status']       = ($info_obj->Type == 'client') ? 'Parent' : 'Not Selected' ;
-			$data['ud_address']             = $info_obj->StreetAddress;		//Address for client
+			$data['ud_client_status']        = '0';															//($info_obj->ConsiderTuitionCentre == NULL) ? 'No' : '' ;
+			$data['ud_client_status_2']      = $info_obj->ClientStatus; // == 'Parent') ? 'Parent' : 'Not Selected' ;
+			$data['ud_address']              = $info_obj->StreetAddress;
+			$data['ud_address2']             = $info_obj->StreetAddress;		//Address for client
 		}
 		
 		$data['u_id']            		= $info_obj->id; //Use old DB ID to link Job later
