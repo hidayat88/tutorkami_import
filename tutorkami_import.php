@@ -4,7 +4,7 @@ require_once('config.php.inc');
 
 /*-------------------------------------------------------------------------------------------------------*/
 //Set your desire execution timer here.
-ini_set('max_execution_time', 30); //Add External PHP max exec timer in seconds. Set 0 for infinity timer.
+ini_set('max_execution_time', 300); //Add External PHP max exec timer in seconds. Set 0 for infinity timer.
 
 /*-------------------------------------------------------------------------------------------------------*/
 class db {
@@ -1109,7 +1109,7 @@ echo "User ID | Username | Role | Status | Exec Time  | <br />";
 					
 		// Collect data for only tutor with activated status 
 		if ($info_obj->Type == 'tutor' && $info_obj->TutorRegistrationStatus == 'Activated'){
-			$data['ud_client_status']        = ($info_obj->ConsiderTuitionCentre == 1) ? '1' : '0' ;
+			$data['ud_client_status']        = ($info_obj->ConsiderTuitionCentre == 'True') ? '1' : '0' ;
 			$data['ud_client_status_2']      = $info_obj->ClientStatus; 											//($info_obj->ConsiderTuitionCentre == 1) ? 'Tuition Center' : 'Not Selected' ; //$info_obj->ConsiderTuitionCentre;
 			$data['ud_address']              = $info_obj->StreetAddress;
 			$data['ud_address2']             = $info_obj->StreetAddress;	//Address2 for tutor
